@@ -1,5 +1,6 @@
 #include "common.h"
 #include "crypto.h"
+#include "tui.h"
 #include "outgoing.h"
 
 // ===============================================================================================
@@ -60,9 +61,15 @@ void file_send(const int connection_socket, char* filename, const bool is_msg_fi
     fclose(fp);
     if (!is_msg_file) {
         sem_wait(&printing);
-        wprintw(log_win, "File sent `%s`\n", filename);
-        sem_post(&printing);
+        wattron(log_win, COLOR_PAIR(CP_YELLOW));
+        wprintw(log_win, "\u2191 File sent ");
+        wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+        wattron(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+        wprintw(log_win, "`%s`", filename);
+        wattroff(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+        wprintw(log_win, "\n");
         wrefresh(log_win);
+        sem_post(&printing);
     }
 }
 
@@ -136,11 +143,20 @@ void handle_outgoing(const int msg_socket, const int file_socket) {
         
         if (!input) continue;
         
-        if (strncmp(input, "-f ", 3) == 0) {
+        if (strcmp(input, "/q") == 0) {
+            free(input);
+            close(msg_socket);
+            close(file_socket);
+            endwin();
+            exit(0);
+        } else if (strncmp(input, "/f ", 3) == 0) {
             file_send(file_socket, input + 3, false);
         } else {
             sem_wait(&printing);
-            wprintw(log_win, "You: %s\n", input);
+            wattron(log_win, COLOR_PAIR(CP_GREEN) | A_BOLD);
+            wprintw(log_win, "You:");
+            wattroff(log_win, COLOR_PAIR(CP_GREEN) | A_BOLD);
+            wprintw(log_win, " %s\n", input);
             wrefresh(log_win);
             msg_send(msg_socket, input);
             sem_post(&printing);

@@ -25,7 +25,7 @@ server.o: server.c server.h common.h
 client.o: client.c client.h common.h
 key_exchange.o: key_exchange.c key_exchange.h common.h
 crypto.o: crypto.c crypto.h common.h
-outgoing.o: outgoing.c outgoing.h common.h crypto.h
-msg_recv.o: msg_recv.c msg_recv.h common.h crypto.h
-file_recv.o: file_recv.c file_recv.h common.h crypto.h
+outgoing.o: outgoing.c outgoing.h common.h crypto.h tui.h
+msg_recv.o: msg_recv.c msg_recv.h common.h crypto.h tui.h
+file_recv.o: file_recv.c file_recv.h common.h crypto.h tui.h
 main.o: main.c common.h args.h tui.h server.h client.h key_exchange.h crypto.h outgoing.h msg_recv.h file_recv.h

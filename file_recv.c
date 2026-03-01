@@ -1,5 +1,6 @@
 #include "common.h"
 #include "crypto.h"
+#include "tui.h"
 #include "file_recv.h"
 
 void* file_recv() {
@@ -64,9 +65,21 @@ void* file_recv() {
         decrypt_file(file_in_enc_path, filename, sym_key_path);
 
         sem_wait(&printing);
-        wprintw(log_win, "%s sent `%s`\n", display_name, filename);
-        sem_post(&printing);
+        wattron(log_win, COLOR_PAIR(CP_YELLOW));
+        wprintw(log_win, "\u2193 ");
+        wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+        wattron(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+        wprintw(log_win, "%s", display_name);
+        wattroff(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+        wattron(log_win, COLOR_PAIR(CP_YELLOW));
+        wprintw(log_win, " sent ");
+        wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+        wattron(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+        wprintw(log_win, "`%s`", filename);
+        wattroff(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+        wprintw(log_win, "\n");
         wrefresh(log_win);
+        sem_post(&printing);
         usleep(100000);
     }
 

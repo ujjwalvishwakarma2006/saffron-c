@@ -28,7 +28,7 @@ void server_send_certificate() {
 
     fclose(fp);
     sem_wait(&printing);
-    wprintw(log_win, "Public Key sent\n");
+    wprintw(log_win, "Certificate Sent\n");
     sem_post(&printing);
     wrefresh(log_win);
 }
@@ -65,7 +65,7 @@ void client_recv_certificate() {
 
     fclose(fp);
     sem_wait(&printing);
-    wprintw(log_win, "Server Public Key Received\n");
+    wprintw(log_win, "Server Certificate Received\n");
     sem_post(&printing);
     wrefresh(log_win);
 }

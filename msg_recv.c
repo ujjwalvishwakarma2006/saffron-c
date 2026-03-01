@@ -1,5 +1,6 @@
 #include "common.h"
 #include "crypto.h"
+#include "tui.h"
 #include "msg_recv.h"
 
 void* msg_recv() {
@@ -46,9 +47,12 @@ void* msg_recv() {
         if (fp == NULL) fatal_error("[RECV_MSG FILE OPENING ERROR]");
         
         sem_wait(&printing);
-        wprintw(log_win, "%s: ", display_name);
+        wattron(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+        wprintw(log_win, "%s:", display_name);
+        wattroff(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+        wprintw(log_win, " ");
         while (fgets(msg_buf_in, sizeof(msg_buf_in), fp) != NULL) {
-            wprintw(log_win, "%s", msg_buf_in);    
+            wprintw(log_win, "%s", msg_buf_in);
         }
         wprintw(log_win, "\n");
         wrefresh(log_win);
