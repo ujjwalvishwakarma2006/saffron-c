@@ -3,7 +3,7 @@
 
 void file_send(const int connection_socket, char* filename, const bool is_msg_file);
 
-void msg_send(const int connection_socket, char* message)
+void msg_send(const int connection_socket, char* message);
 
 char* wgetstring(WINDOW* window);
 
