@@ -18,7 +18,8 @@ char buf_out[SIZE];
 
 
 // ------------------------------- Key File Paths -------------------------------
-char* pub_key_path = "pubkey.pem";
+char* root_ca_cert_path = "root_ca_certificate.pem";
+char* server_cert_path = "server_certificate.pem";
 char* priv_key_path = "privkey.pem";
 char* sym_key_path = "aeskey.bin";
 char* sym_key_enc_path = "aeskey_enc.bin";

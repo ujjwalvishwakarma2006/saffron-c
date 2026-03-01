@@ -28,18 +28,18 @@ int main(int argc, char* argv[]) {
         msg_socket = server_accept(msg_socket_listen, "Message Transfer");
         file_socket = server_accept(file_socket_listen, "File Transfer");
 
-        send_server_public_key();
-        recv_session_key();
-        decrypt_session_key();
+        server_send_certificate();
+        server_recv_session_key();
+        server_decrypt_session_key();
     } else if (app_mode == CLIENT) {
         // Initialize two separate connections with the server
         msg_socket = client_connect(server_ip, msg_port, "Message Transfer");
         file_socket = client_connect(server_ip, file_port, "File Transfer");
 
-        recv_server_public_key();
-        generate_session_key();
-        encrypt_session_key();
-        send_session_key();
+        client_recv_certificate();
+        client_generate_session_key();
+        client_encrypt_session_key();
+        client_send_session_key();
     } else {
         fatal_error("[ENVIRONMENT INIT FAILED]");
     }

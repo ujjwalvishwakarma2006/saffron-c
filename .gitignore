@@ -1,0 +1,12 @@
+*.o
+*.pem
+*.key
+*.crt
+*.log
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib
+*.zip
+*.txt

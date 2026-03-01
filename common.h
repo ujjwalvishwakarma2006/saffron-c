@@ -43,8 +43,9 @@ extern char buf_out[SIZE];              /* Buffer for outgoing message/file data
 
 
 // ------------------------------- Key File Paths -------------------------------
-extern char* pub_key_path;              /* Server's RSA public key  (PEM) */
-extern char* priv_key_path;             /* Server's RSA private key (PEM) */
+extern char* root_ca_cert_path;         /* Path to root CA's certificate */
+extern char* server_cert_path;          /* Path to server's certificate */
+extern char* priv_key_path;             /* Path to server's private key */
 extern char* sym_key_path;              /* AES session key (plaintext) */
 extern char* sym_key_enc_path;          /* AES session key (encrypted with server's public key) */
 
