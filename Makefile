@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-LDFLAGS = -lncurses -lpthread
+LDFLAGS = -lncursesw -lpthread
 
 SRCS = main.c common.c args.c tui.c server.c client.c key_exchange.c crypto.c outgoing.c msg_recv.c file_recv.c
 OBJS = $(SRCS:.c=.o)
