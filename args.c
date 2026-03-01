@@ -24,10 +24,11 @@ void setup(int argc, char* argv[]) {
     app_mode = strcmp(argv[1], "--server") == 0 ? SERVER : CLIENT;
 
     for (int i = 2; i < argc; ++i) {
-        if (strcmp(argv[i], "--ip") == 0) {
+        if (strcmp(argv[i], "-ip") == 0) {
             if (i + 1 < argc) {
-                strncpy(server_ip, argv[++i], sizeof(server_ip) - 1);
-                server_ip[sizeof(server_ip) - 1] = '\0';
+                // strncpy(server_ip, argv[++i], sizeof(server_ip) - 1);
+                server_ip = argv[++i];
+                // server_ip[sizeof(server_ip) - 1] = '\0';
             } else {
                 print_usage("app");
                 exit(1);
