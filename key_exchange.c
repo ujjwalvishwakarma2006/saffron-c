@@ -131,7 +131,7 @@ void client_generate_session_key() {
 void client_encrypt_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
-        char* args[] = {"openssl", "pkeyutl", "-encrypt", "-certin", "-inkey", server_cert_path, "-in", sym_key_path, "-out", sym_key_enc_path, NULL};
+        char* args[] = {"openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", server_cert_path, "-certin", "-in", sym_key_path, "-out", sym_key_enc_path, NULL};
         execvp(args[0], args);
 
         // execvp only returns if it fails to execute
