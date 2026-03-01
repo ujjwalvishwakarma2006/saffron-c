@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
         file_socket = client_connect(server_ip, file_port, "File Transfer");
 
         client_recv_certificate();
+        client_verify_certificate();
         client_generate_session_key();
         client_encrypt_session_key();
         client_send_session_key();
