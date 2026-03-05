@@ -75,22 +75,22 @@ Client                                    Server
 ### `common.h / .c`
 Global state shared across all modules: `app_mode`, sockets, ports, IP, buffers, all file paths, ncurses windows, and `fatal_error()`.
 
-### `args.h / .c`
+### `args.h / .c` - CLI argument parsing and usage output
 - `void setup(int argc, char* argv[])` — parses `--server`/`--client`, `-ip`, `-mp`, `-fp`, `--help`.
 - `void print_usage(char* program_name)` — prints usage to stderr.
 
-### `tui.h / .c`
+### `tui.h / .c` - ncurses TUI setup, layout drawing, and input reading
 - `void tui_init()` — initializes ncurses, sets up color pairs, draws the 4-section TUI layout (header, log, input, hint bar).
 - `char* wgetstring(WINDOW* window)` — reads a dynamically-sized string from an ncurses window with backspace handling.
 
-### `server.h / .c`
+### `server.h / .c` - server-side socket creation, binding, and connection acceptance
 - `int server_start(const char* ip, const int port, const char* label)` — creates, binds, and listens on a TCP socket. Returns listening fd.
 - `int server_accept(const int listen_fd, const char* label)` — accepts the first incoming connection. Returns connected fd.
 
-### `client.h / .c`
+### `client.h / .c` - client-side TCP connection establishment
 - `int client_connect(const char* ip, const int port, const char* label)` — establishes a TCP connection. Returns connected fd.
 
-### `key_exchange.h / .c`
+### `key_exchange.h / .c` - certificate exchange and RSA session key negotiation, both sides
 - `void server_send_certificate()` — server sends its X.509 certificate to client.
 - `void client_recv_certificate()` — client receives the certificate.
 - `void client_verify_certificate()` — verifies certificate against Root CA via `openssl verify`. Calls `fatal_error()` on failure.
@@ -100,19 +100,19 @@ Global state shared across all modules: `app_mode`, sockets, ports, IP, buffers,
 - `void server_recv_session_key()` — receives encrypted session key.
 - `void server_decrypt_session_key()` — decrypts session key via `openssl pkeyutl`. Calls `fatal_error()` on failure.
 
-### `crypto.h / .c`
+### `crypto.h / .c` - symmetric AES-256-CBC file encryption and decryption
 - `void crypto_encrypt(char* in_path, char* out_path, char* key_path)` — encrypts a file using AES-256-CBC (forks `openssl enc`).
 - `void crypto_decrypt(char* in_path, char* out_path, char* key_path)` — decrypts a file using AES-256-CBC (forks `openssl enc -d`).
 
-### `outgoing.h / .c`
+### `outgoing.h / .c` - main-thread input loop for sending outgoing messages and files
 - `void msg_send(const int socket, char* message)` — writes message to temp file, encrypts it, delegates to `file_send()`.
 - `void file_send(const int socket, char* filepath, const bool is_msg_file)` — encrypts and sends a file. Transmits filename, size, then data.
 - `void outgoing_handle()` — main input loop. `/f <filepath>` sends a file, `/q` quits, anything else sends a message.
 
-### `msg_recv.h / .c`
+### `msg_recv.h / .c` - dedicated thread for receiving and displaying incoming messages
 - `void* msg_recv()` — thread function. Continuously receives, decrypts, and displays incoming messages in the log window.
 
-### `file_recv.h / .c`
+### `file_recv.h / .c` - dedicated thread for receiving, decrypting, and saving incoming files
 - `void* file_recv()` — thread function. Continuously receives, decrypts, and saves incoming files. Displays colored transfer log.
 
 ---
@@ -179,6 +179,18 @@ Options:
 | 🔴 Security | Not forward secret — RSA key exchange means compromise of the server's private key exposes all past session keys. A Diffie-Hellman based exchange (e.g., ECDHE) would fix this. |
 | 🔴 Security | Filenames and their lengths are transmitted unencrypted. |
 | 🔴 Security | Vulnerable to DoS — `MSG_WAITALL` blocks indefinitely if a peer connects but sends incomplete or no data, hanging the entire session with no timeout. |
+| 🔴 Security | No explicit integrity verification — there is no MAC or HMAC; correctness relies solely on AES-CBC padding, which cannot detect intentional tampering. An HMAC-SHA256 over ciphertext (encrypt-then-MAC) would fix this. |
 | 🟡 Feature | Only one client can connect at a time — no support for multiple simultaneous connections. |
 | 🟡 Feature | No terminal resize handling — TUI layout is fixed at startup dimensions. |
 | 🔵 Dependency | All cryptographic operations are performed by forking `openssl` as child processes, requiring `openssl` to be installed and available on `PATH`. |
+| 🔵 Performance | The input buffer starts at a single byte and grows one character at a time via `realloc()`, causing a heap allocation on every keystroke. Starting with a reasonably-sized fixed capacity (e.g., 256 bytes) and only reallocating when input exceeds it would eliminate most of these redundant allocations. |
+
+A `Rust` rewrite of this project that addresses most of the above limitations is available [here](https://github.com/ujjwalvishwakarma2006/saffron).
+
+## Contribution
+
+There are no formal contribution guidelines yet. At minimum, please provide a clear explanation of your changes — if you are fixing a bug, include at least one concrete failure case that reproduces it.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
