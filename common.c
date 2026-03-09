@@ -4,7 +4,7 @@
 // ----------------------------- Application State -----------------------------
 AppMode app_mode = NONE;
 sem_t printing;
-char* server_ip = "10.0.2.4";      
+char* server_ip = "127.0.0.1";      
 char* display_name = "Server";    
 int msg_port = 8080;
 int file_port = 8081;
