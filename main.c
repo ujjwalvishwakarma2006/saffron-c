@@ -5,9 +5,13 @@
 #include "client.h"
 #include "key_exchange.h"
 #include "crypto.h"
+#include "send.h"
+#include "send_file.h"
+#include "send_msg.h"
 #include "outgoing.h"
-#include "msg_recv.h"
-#include "file_recv.h"
+#include "recv.h"
+#include "recv_file.h"
+#include "recv_msg.h"
 
 int main(int argc, char* argv[]) {
     setup(argc, argv);
@@ -46,8 +50,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Threads handle incoming Messages/Files
-    pthread_create(&msg_recv_thread, NULL, msg_recv, NULL);
-    pthread_create(&file_recv_thread, NULL, file_recv, NULL);
+    pthread_create(&msg_recv_thread, NULL, msg_recv_loop, NULL);
+    pthread_create(&file_recv_thread, NULL, file_recv_loop, NULL);
 
     // Original Process handles outgoing transfers
     handle_outgoing(msg_socket, file_socket);

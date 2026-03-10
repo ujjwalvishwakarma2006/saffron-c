@@ -10,4 +10,4 @@
 *.dylib
 *.zip
 *.txt
-./saffron
+saffron

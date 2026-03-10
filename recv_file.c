@@ -1,0 +1,75 @@
+#include "common.h"
+#include "crypto.h"
+#include "tui.h"
+#include "recv.h"
+#include "recv_file.h"
+
+void recv_filename(char* buffer) {
+    int n;
+    uint32_t filename_len;
+
+    // Clear buffer before receiving any object
+    memset(buffer, 0, sizeof(buffer));
+
+    // Receive length of the filename first
+    n = recv(file_socket, &filename_len, sizeof(filename_len), MSG_WAITALL);
+    if (n <= 0) fatal_error("[FILENAME LENGTH RECV ERROR]");
+
+    n = recv(file_socket, buffer, filename_len, MSG_WAITALL);
+    if (n <= 0) fatal_error("[FILENAME RECV ERROR]");
+    buffer[filename_len] = '\0';      /* Ensure null termination */
+}
+
+void recv_file_enc() {
+    recv_file_content(file_socket, file_in_enc_path, file_buf_in);
+}
+
+void recv_file_tag() {
+
+}
+
+void vrfy_file_tag() {
+
+}
+
+void file_decrypt(char* filename) {
+    decrypt_file(file_in_enc_path, filename, sym_key_path);
+}
+
+void confirm_recv(char* filename) {
+    sem_wait(&printing);
+    wattron(log_win, COLOR_PAIR(CP_YELLOW));
+    wprintw(log_win, "\u2193 ");
+    wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+    wattron(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+    wprintw(log_win, "%s", display_name);
+    wattroff(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+    wattron(log_win, COLOR_PAIR(CP_YELLOW));
+    wprintw(log_win, " sent ");
+    wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+    wattron(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+    wprintw(log_win, "`%s`", filename);
+    wattroff(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+    wprintw(log_win, "\n");
+    wrefresh(log_win);
+    sem_post(&printing);
+}
+
+
+void* file_recv_loop() {
+    char filename[128];
+    FILE* fp;
+    uint32_t file_size;
+    uint32_t bytes_received, to_receive;
+    
+    while (1) {
+        recv_filename(filename);
+        recv_file_enc();
+        file_decrypt(filename);
+        confirm_recv(filename);
+
+        usleep(100000);
+    }
+
+    return NULL;
+}

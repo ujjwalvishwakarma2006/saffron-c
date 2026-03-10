@@ -1,10 +1,6 @@
 #include "common.h"
 #include "key_exchange.h"
 
-// ===============================================================================================
-//                                     KEY EXCHANGE FUNCTIONS 
-// ===============================================================================================
-
 // Server calls the following function to share his public key
 void server_send_certificate() {
     // Follow similar step to file_send() to send the public key file to the client
@@ -99,6 +95,7 @@ void client_verify_certificate() {
     sem_wait(&printing);
     wprintw(log_win, "Server certificate verified successfully\n");
     sem_post(&printing);
+    wrefresh(log_win);
     wrefresh(log_win);
 }
 
