@@ -1,75 +1,42 @@
 #include "common.h"
+#include "send.h"
+#include "recv.h"
 #include "key_exchange.h"
 
-// Server calls the following function to share his public key
+/* Step 1a: Server sends its certificate to the client */
 void server_send_certificate() {
-    // Follow similar step to file_send() to send the public key file to the client
-    int n;
-    FILE* fp;
-    uint32_t file_size;
-    int connection_socket = file_socket;
-
-    fp = fopen(server_cert_path, "rb");
-    if (fp == NULL) fatal_error("[FILE OPENING ERROR - KEY EXCHANGE]");
-
-    fseek(fp, 0, SEEK_END);
-    file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    n = send(connection_socket, &file_size, sizeof(file_size), 0);
-    if (n == -1) fatal_error("[FILE LENGTH SEND ERROR - KEY EXCHANGE]");
-
-    while ((n = fread(buf_out, 1, SIZE, fp)) > 0) {
-        send(connection_socket, buf_out, n, 0);
-    }
-
-    fclose(fp);
+    send_file_content(file_socket, server_cert_path, buf_out);
     sem_wait(&printing);
     wprintw(log_win, "Certificate Sent\n");
     sem_post(&printing);
     wrefresh(log_win);
 }
 
-// Client calls this function to receive server's public key
+/* Step 1b: Client receives the certificate */
 void client_recv_certificate() {
-    int n;
-    uint32_t file_size;
-    uint32_t bytes_received, to_receive;
-    FILE* fp;
-    int connection_socket = file_socket;
-
-    fp = fopen(server_cert_path, "w");
-    if (fp == NULL) fatal_error("[FILE OPENING ERROR - KEY EXCHANGE]");
-
-    n = recv(connection_socket, &file_size, sizeof(file_size), MSG_WAITALL);
-    if (n <= 0) fatal_error("[FILESIZE RECV ERROR]");
-
-    bytes_received = 0;
-    while (bytes_received < file_size) {
-        to_receive = (file_size-bytes_received > SIZE) ? 
-                    SIZE : (file_size-bytes_received);
-                    
-        n = recv(connection_socket, file_buf_in, to_receive, 0);
-        if (n <= 0) {
-            printf("[WARNING] Connection closed while receiving file\n");
-            break;
-        }
-        
-        // Write to file
-        fwrite(file_buf_in, 1, n, fp);
-        bytes_received += n;
-    }
-
-    fclose(fp);
+    recv_file_content(file_socket, server_cert_path, file_buf_in);
     sem_wait(&printing);
     wprintw(log_win, "Server Certificate Received\n");
     sem_post(&printing);
     wrefresh(log_win);
 }
 
-// Client verifies the ceritificate sent by the server using Root CA's certificate
+/* Step 2: Client verifies the certificate via root CA's certificate */
 void client_verify_certificate() {
-    int child_pid = fork(); 
+    int child_pid = fork();
     if (child_pid == 0) {
+        // Open /dev/null for writing
+        int dev_null = open("/dev/null", O_WRONLY);
+        if (dev_null == -1) {
+            perror("Failed to open /dev/null");
+            exit(1);
+        }
+
+        // Redirect stdout (1) and stderr (2) to /dev/null
+        dup2(dev_null, STDOUT_FILENO);
+        dup2(dev_null, STDERR_FILENO);
+        close(dev_null); // Don't need the extra descriptor anymore
+        
         // openssl rand -out sym_key_path 32
         char* args[] = {"openssl", "verify", "-CAfile", root_ca_cert_path, server_cert_path, NULL};
         execvp(args[0], args);
@@ -99,11 +66,11 @@ void client_verify_certificate() {
     wrefresh(log_win);
 }
 
-// Client calls this function to generate a session for every new session
+/* Step 3: Client generates a session key for further communication */
 void client_generate_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
-        char* args[] = {"openssl", "rand", "-out", sym_key_path, "32", NULL};
+        char* args[] = {"openssl", "rand", "-hex", "-out", sym_key_path, "32", NULL};
         execvp(args[0], args);
 
         // execvp only returns if it fails to execute
@@ -124,7 +91,7 @@ void client_generate_session_key() {
     }
 }
 
-// Client calls this function to encrypt the session key using server's public key
+/* Step 4: Client encrypts the session key using server's certificate */
 void client_encrypt_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
@@ -149,72 +116,25 @@ void client_encrypt_session_key() {
     }
 }
 
-// Client calls this function to generate a session key and share with the server
+/* Step 5a: Client sends the encrypted session key to the server */
 void client_send_session_key() {
-    // Follow similar step to file_send() to send the public key file to the client
-    int n;
-    FILE* fp;
-    uint32_t file_size;
-    int connection_socket = file_socket;
-
-    fp = fopen(sym_key_enc_path, "rb");
-    if (fp == NULL) fatal_error("[FILE OPENING ERROR - KEY EXCHANGE]");
-
-    fseek(fp, 0, SEEK_END);
-    file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    n = send(connection_socket, &file_size, sizeof(file_size), 0);
-    if (n == -1) fatal_error("[FILE LENGTH SEND ERROR - KEY EXCHANGE]");
-
-    while ((n = fread(buf_out, 1, SIZE, fp)) > 0) {
-        send(connection_socket, buf_out, n, 0);
-    }
-
-    fclose(fp);
+    send_file_content(file_socket, sym_key_enc_path, buf_out);
     sem_wait(&printing);
     wprintw(log_win, "Session Key sent\n");
     sem_post(&printing);
     wrefresh(log_win);
 }
 
-// Server calls this function to receive the session key from client
+/* Step 5b: Server receives the encrypted session key */
 void server_recv_session_key() {
-    int n;
-    uint32_t file_size;
-    uint32_t bytes_received, to_receive;
-    FILE* fp;
-    int connection_socket = file_socket;
-
-    fp = fopen(sym_key_enc_path, "w");
-    if (fp == NULL) fatal_error("[FILE OPENING ERROR - KEY EXCHANGE]");
-
-    n = recv(connection_socket, &file_size, sizeof(file_size), MSG_WAITALL);
-    if (n <= 0) fatal_error("[FILESIZE RECV ERROR]");
-
-    bytes_received = 0;
-    while (bytes_received < file_size) {
-        to_receive = (file_size-bytes_received > SIZE) ? 
-                    SIZE : (file_size-bytes_received);
-                    
-        n = recv(connection_socket, file_buf_in, to_receive, 0);
-        if (n <= 0) {
-            printf("[WARNING] Connection closed while receiving file\n");
-            break;
-        }
-        
-        // Write to file
-        fwrite(file_buf_in, 1, n, fp);
-        bytes_received += n;
-    }
-
-    fclose(fp);
+    recv_file_content(file_socket, sym_key_enc_path, file_buf_in);
     sem_wait(&printing);
     wprintw(log_win, "Session Key Received\n");
     sem_post(&printing);
     wrefresh(log_win);
 }
 
-// Server calls this function to decrypt the encrypted session key
+/* Step 6: Server decrypts the encrypted session key using its private key */
 void server_decrypt_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {

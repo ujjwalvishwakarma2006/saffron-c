@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <locale.h>
+#include <fcntl.h>
 
 // POSIX / System headers
 #include <unistd.h>
@@ -54,10 +55,14 @@ extern char* sym_key_enc_path;          /* AES session key (encrypted with serve
 // Intermediate files used during encryption/decryption within a session.
 extern char* msg_out_path;              /* Outgoing message — plaintext */
 extern char* msg_out_enc_path;          /* Outgoing message — encrypted */
+extern char* msg_out_tag_path;          /* HMAC tag file of last sent message */
 extern char* msg_in_enc_path;           /* Incoming message — encrypted */
 extern char* msg_in_path;               /* Incoming message — decrypted */
+extern char* msg_in_tag_path;           /* HMAC tag file of last received message */
 extern char* file_out_enc_path;         /* Outgoing file — encrypted */
+extern char* file_out_tag_path;         /* HMAC tag file of last received file */
 extern char* file_in_enc_path;          /* Incoming file — encrypted */
+extern char* file_in_tag_path;          /* HMAC tag file of last sent file */
 
 
 // ------------------------------- ncurses Windows -------------------------------

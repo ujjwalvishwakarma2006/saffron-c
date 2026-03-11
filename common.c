@@ -19,19 +19,23 @@ char buf_out[SIZE];
 
 // ------------------------------- Key File Paths -------------------------------
 char* root_ca_cert_path = "root_ca_certificate.pem";
-char* server_cert_path = "server_certificate.pem";
-char* priv_key_path = "privkey.pem";
-char* sym_key_path = "aeskey.bin";
-char* sym_key_enc_path = "aeskey_enc.bin";
+char* server_cert_path  = "server_certificate.pem";
+char* priv_key_path     = "privkey.pem";
+char* sym_key_path      = "aeskey.bin";
+char* sym_key_enc_path  = "aeskey_enc.bin";
 
 
 // ---------------------------- Temporary File Paths ----------------------------
-char* msg_out_path = ".msg_out_unencrypted.txt";
-char* msg_out_enc_path = ".msg_out_encrypted.bin";
-char* msg_in_enc_path = ".msg_inc_encrypted.bin";
-char* msg_in_path = ".msg_inc_unencrypted.txt";
+char* msg_out_path      = ".msg_out_unencrypted.txt";
+char* msg_out_enc_path  = ".msg_out_encrypted.bin";
+char* msg_out_tag_path  = ".msg_out_tag.txt";
+char* msg_in_enc_path   = ".msg_inc_encrypted.bin";
+char* msg_in_path       = ".msg_inc_unencrypted.txt";
+char* msg_in_tag_path   = ".msg_in_tag.txt";
 char* file_out_enc_path = ".file_out_encrypted.bin";
-char* file_in_enc_path = ".file_inc_encrypted.bin";
+char* file_out_tag_path = ".file_out_tag.txt";
+char* file_in_enc_path  = ".file_inc_encrypted.bin";
+char* file_in_tag_path  = ".file_out_tag.txt";
 
 
 // ------------------------------- ncurses Windows -------------------------------

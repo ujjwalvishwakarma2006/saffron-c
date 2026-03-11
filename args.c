@@ -15,7 +15,7 @@ void print_usage(const char *program_name) {
 // Function to setup the environment and some global variables based on command line inputs
 // e.g. whether the application is being run as client or server? 
 void setup(int argc, char* argv[]) {
-    if ((argc < 2) || strcmp(argv[1], "--server") != 0 && strcmp(argv[1], "--client") != 0) {
+    if ((argc < 2) || (strcmp(argv[1], "--server") != 0 && strcmp(argv[1], "--client") != 0)) {
         print_usage("app");
         exit(1);
     }
@@ -26,9 +26,7 @@ void setup(int argc, char* argv[]) {
     for (int i = 2; i < argc; ++i) {
         if (strcmp(argv[i], "-ip") == 0) {
             if (i + 1 < argc) {
-                // strncpy(server_ip, argv[++i], sizeof(server_ip) - 1);
                 server_ip = argv[++i];
-                // server_ip[sizeof(server_ip) - 1] = '\0';
             } else {
                 print_usage("app");
                 exit(1);

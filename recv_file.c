@@ -4,12 +4,12 @@
 #include "recv.h"
 #include "recv_file.h"
 
-void recv_filename(char* buffer) {
+void recv_filename(char* buffer, int size) {
     int n;
     uint32_t filename_len;
 
     // Clear buffer before receiving any object
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, size);
 
     // Receive length of the filename first
     n = recv(file_socket, &filename_len, sizeof(filename_len), MSG_WAITALL);
@@ -58,12 +58,9 @@ void confirm_recv(char* filename) {
 
 void* file_recv_loop() {
     char filename[128];
-    FILE* fp;
-    uint32_t file_size;
-    uint32_t bytes_received, to_receive;
     
     while (1) {
-        recv_filename(filename);
+        recv_filename(filename, 128);
         recv_file_enc();
         file_decrypt(filename);
         confirm_recv(filename);

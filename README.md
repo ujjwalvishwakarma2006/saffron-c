@@ -11,7 +11,7 @@
 *Encrypted peer-to-peer chat over TCP*
 </center>
 
-> **Note**: This version of the project is no longer maintained actively. Maintainers of the project chose `Rust` to rewrite this project for the ease of development that can be found [here](https://github.com/ujjwalvishwakarma2006/saffron). Instead of just being a rewrite of the project, the `Rust` version also addresses most of the limitations mentioned in [Limitations and Vulnerabilities](#limitations-and-vulnerabilities) section and is improving constantly.
+> **Note**: This version of the project is no longer maintained actively. Maintainers of the project chose `Rust` to rewrite this project for the ease of development that can be found [here](https://github.com/ujjwalvishwakarma2006/saffron). Instead of just being a rewrite of the project, the `Rust` version also addresses most of the limitations mentioned in [Limitations and Vulnerabilities](#limitations-and-vulnerabilities) section and is improving constantly. If you do not see the Rust repository through the link, it means that the rewrite is in progress. Be Patient ( :
 
 ---
 
