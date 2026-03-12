@@ -18,7 +18,7 @@ void send_file_content(int connection_socket, char* filepath, char* buffer) {
     if (n == -1) fatal_error("[ERROR SEND CONTENT LENGTH]");
 
     // Send file content
-    while ((n = fread(buffer, 1, SIZE, fp)) > 0) {
+    while ((n = fread(buffer, 1, BUF_SIZE, fp)) > 0) {
         send(connection_socket, buffer, n, 0);
     }
 

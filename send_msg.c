@@ -22,7 +22,8 @@ void send_msg_enc() {
 }
 
 void send_msg_tag() {
-
+    generate_hmac(msg_out_tag_path, msg_out_enc_path);
+    send_file_content(msg_socket, msg_out_tag_path, buf_out);
 }
 
 void display_sent_msg(char* message) {
@@ -40,6 +41,7 @@ void send_msg(char* message) {
     write_msg_file(message);
     msg_file_encrypt();
     send_msg_enc();
+    send_msg_tag();
     display_sent_msg(message);
     
 }

@@ -89,6 +89,11 @@ void client_generate_session_key() {
     } else {
         fatal_error("[SESSION KEY GENERATION - CHILD PROCESS ABNORMAL EXIT]");
     }
+
+    // Read session key into the session_key buffer
+    FILE* fp = fopen(sym_key_path, "r");
+    fread(session_key, 1, 65, fp);
+    fclose(fp);
 }
 
 /* Step 4: Client encrypts the session key using server's certificate */
@@ -157,4 +162,9 @@ void server_decrypt_session_key() {
     } else {
         fatal_error("[SESSION KEY DECRYPTION - CHILD PROCESS ABNORMAL EXIT]");
     }
+
+    // Read session key into the session_key buffer
+    FILE* fp = fopen(sym_key_path, "r");
+    fread(session_key, 1, 65, fp);
+    fclose(fp);
 }

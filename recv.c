@@ -9,7 +9,7 @@ void recv_file_content(int connection_socket, char* filename, char* buffer) {
     FILE* fp;
 
     // Clear buffer 
-    memset(buffer, 0, SIZE);
+    memset(buffer, 0, BUF_SIZE);
 
     // Open the file in write mode
     fp = fopen(filename, "w");
@@ -25,8 +25,8 @@ void recv_file_content(int connection_socket, char* filename, char* buffer) {
     while (received_bytes < content_bytes) {
 
         // Receive content in the buffer
-        to_receive = (content_bytes-received_bytes > SIZE) ?
-                    SIZE : (content_bytes-received_bytes);
+        to_receive = (content_bytes-received_bytes > BUF_SIZE) ?
+                    BUF_SIZE : (content_bytes-received_bytes);
                     
         n = recv(connection_socket, buffer, to_receive, MSG_WAITALL);
         if (n <= 0) {

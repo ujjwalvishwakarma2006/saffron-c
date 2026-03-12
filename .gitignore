@@ -10,4 +10,5 @@
 *.dylib
 *.zip
 *.txt
+*.hex
 saffron

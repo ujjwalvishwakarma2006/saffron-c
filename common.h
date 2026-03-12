@@ -19,11 +19,13 @@
 // TUI (ncurses)
 #include <ncurses.h>
 
-#define SIZE 1024                       /* Consistent buffer size */
+#define BUF_SIZE 1024                   /* Consistent buffer size */
+#define KEY_SIZE 65                     /* Symmetric key size */
+#define TAG_SIZE 128                    /* HMAC tag size */
 
 typedef enum {
-    SERVER,
-    CLIENT,
+    SERVER,                             /* Applications runs in SERVER mode */
+    CLIENT,                             /* Applications runs in CLIENT mode */
     NONE
 } AppMode;
 
@@ -38,9 +40,17 @@ extern int msg_socket, file_socket;     /* Connected sockets for message and fil
 
 
 // -------------------------------- I/O Buffers --------------------------------
-extern char msg_buf_in[SIZE];           /* Buffer for incoming message data */
-extern char file_buf_in[SIZE];          /* Buffer for incoming file data */
-extern char buf_out[SIZE];              /* Buffer for outgoing message/file data */
+extern char msg_buf_in[BUF_SIZE];       /* Buffer for incoming message data */
+extern char file_buf_in[BUF_SIZE];      /* Buffer for incoming file data */
+extern char buf_out[BUF_SIZE];          /* Buffer for outgoing message/file data */
+extern char session_key[KEY_SIZE];      /* Buffer for session key */
+
+
+// -------------------------------- Tag Buffers --------------------------------
+extern char local_msg_tag[TAG_SIZE];    /* Buffer for locally generated message tag */
+extern char recvd_msg_tag[TAG_SIZE];    /* Buffer for received message tag */
+extern char local_file_tag[TAG_SIZE];   /* Buffer for locally generated file tag */
+extern char recvd_file_tag[TAG_SIZE];   /* Buffer for received file tag */
 
 
 // ------------------------------- Key File Paths -------------------------------
@@ -56,13 +66,18 @@ extern char* sym_key_enc_path;          /* AES session key (encrypted with serve
 extern char* msg_out_path;              /* Outgoing message — plaintext */
 extern char* msg_out_enc_path;          /* Outgoing message — encrypted */
 extern char* msg_out_tag_path;          /* HMAC tag file of last sent message */
+
 extern char* msg_in_enc_path;           /* Incoming message — encrypted */
 extern char* msg_in_path;               /* Incoming message — decrypted */
-extern char* msg_in_tag_path;           /* HMAC tag file of last received message */
+extern char* msg_in_recvd_tag_path;     /* File of Received HMAC tag for last received msg */
+extern char* msg_in_local_tag_path;     /* File of Generate HMAC tag for last received msg */
+
 extern char* file_out_enc_path;         /* Outgoing file — encrypted */
-extern char* file_out_tag_path;         /* HMAC tag file of last received file */
+extern char* file_out_tag_path;         /* HMAC tag file of last sent file */
+
 extern char* file_in_enc_path;          /* Incoming file — encrypted */
-extern char* file_in_tag_path;          /* HMAC tag file of last sent file */
+extern char* file_in_recvd_tag_path;    /* File of Received HMAC tag for last received file */
+extern char* file_in_local_tag_path;    /* File of Generate HMAC tag for last received file */
 
 
 // ------------------------------- ncurses Windows -------------------------------

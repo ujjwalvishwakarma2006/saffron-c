@@ -1,9 +1,11 @@
 #ifndef MSG_RECV_H
 #define MSG_RECV_H
 
+void read_file_content(char* buffer, char* filename);
+
 void recv_msg_enc();    /* Receive encrypted message */
 void recv_msg_tag();    /* Receive HMAC tag for the message */
-void vrfy_msg_tag();    /* Verify the tag of the message */
+bool vrfy_msg_tag();    /* Verify the tag of the message */
 void msg_decrypt();     /* Decrypt the encrypted message */
 void msg_display();     /* Display the decrypted message */
 
