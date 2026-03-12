@@ -12,3 +12,6 @@
 *.txt
 *.hex
 saffron
+objects/
+.saffron-temp/
+.saffron-certs/

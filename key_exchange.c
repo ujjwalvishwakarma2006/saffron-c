@@ -37,7 +37,6 @@ void client_verify_certificate() {
         dup2(dev_null, STDERR_FILENO);
         close(dev_null); // Don't need the extra descriptor anymore
         
-        // openssl rand -out sym_key_path 32
         char* args[] = {"openssl", "verify", "-CAfile", root_ca_cert_path, server_cert_path, NULL};
         execvp(args[0], args);
     
@@ -70,7 +69,7 @@ void client_verify_certificate() {
 void client_generate_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
-        char* args[] = {"openssl", "rand", "-hex", "-out", sym_key_path, "32", NULL};
+        char* args[] = {"openssl", "rand", "-hex", "-out", session_key_path, "32", NULL};
         execvp(args[0], args);
 
         // execvp only returns if it fails to execute
@@ -91,7 +90,7 @@ void client_generate_session_key() {
     }
 
     // Read session key into the session_key buffer
-    FILE* fp = fopen(sym_key_path, "r");
+    FILE* fp = fopen(session_key_path, "r");
     fread(session_key, 1, 65, fp);
     fclose(fp);
 }
@@ -100,7 +99,7 @@ void client_generate_session_key() {
 void client_encrypt_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
-        char* args[] = {"openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", server_cert_path, "-certin", "-in", sym_key_path, "-out", sym_key_enc_path, NULL};
+        char* args[] = {"openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", server_cert_path, "-certin", "-in", session_key_path, "-out", encrypted_session_key_path, NULL};
         execvp(args[0], args);
 
         // execvp only returns if it fails to execute
@@ -123,7 +122,7 @@ void client_encrypt_session_key() {
 
 /* Step 5a: Client sends the encrypted session key to the server */
 void client_send_session_key() {
-    send_file_content(file_socket, sym_key_enc_path, buf_out);
+    send_file_content(file_socket, encrypted_session_key_path, buf_out);
     sem_wait(&printing);
     wprintw(log_win, "Session Key sent\n");
     sem_post(&printing);
@@ -132,7 +131,7 @@ void client_send_session_key() {
 
 /* Step 5b: Server receives the encrypted session key */
 void server_recv_session_key() {
-    recv_file_content(file_socket, sym_key_enc_path, file_buf_in);
+    recv_file_content(file_socket, encrypted_session_key_path, file_buf_in);
     sem_wait(&printing);
     wprintw(log_win, "Session Key Received\n");
     sem_post(&printing);
@@ -143,7 +142,7 @@ void server_recv_session_key() {
 void server_decrypt_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
-        char* args[] = {"openssl", "pkeyutl", "-decrypt", "-inkey", priv_key_path, "-in", sym_key_enc_path, "-out", sym_key_path, NULL};
+        char* args[] = {"openssl", "pkeyutl", "-decrypt", "-inkey", priv_key_path, "-in", encrypted_session_key_path, "-out", session_key_path, NULL};
         execvp(args[0], args);
 
         // execvp only returns if it fails to execute
@@ -164,7 +163,7 @@ void server_decrypt_session_key() {
     }
 
     // Read session key into the session_key buffer
-    FILE* fp = fopen(sym_key_path, "r");
+    FILE* fp = fopen(session_key_path, "r");
     fread(session_key, 1, 65, fp);
     fclose(fp);
 }

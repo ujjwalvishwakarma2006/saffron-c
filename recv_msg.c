@@ -24,26 +24,26 @@ void recv_msg_enc() {
 }
 
 void recv_msg_tag() {
-    recv_file_content(msg_socket, msg_in_recvd_tag_path, msg_buf_in);
+    recv_file_content(msg_socket, msg_in_received_tag_path, msg_buf_in);
 }
 
 bool vrfy_msg_tag() {
-    generate_hmac(msg_in_local_tag_path, msg_in_enc_path);
+    generate_hmac(msg_in_expected_tag_path, msg_in_enc_path);
 
     // Read locally generated HMAC
-    read_file_content(local_msg_tag, msg_in_local_tag_path);
+    read_file_content(expected_msg_tag, msg_in_expected_tag_path);
     
     // Read received HMAC
-    read_file_content(recvd_msg_tag, msg_in_recvd_tag_path);
+    read_file_content(received_msg_tag, msg_in_received_tag_path);
 
     // Return true if both HMACs match
-    if (strncmp(local_msg_tag, recvd_msg_tag, TAG_SIZE) != 0) return true;
+    if (strncmp(expected_msg_tag, received_msg_tag, TAG_SIZE) != 0) return true;
 
     return false;
 }
 
 void msg_decrypt() {
-    decrypt_file(msg_in_enc_path, msg_in_path, sym_key_path);
+    decrypt_file(msg_in_enc_path, msg_in_path, session_key_path);
 }
 
 void msg_display() {

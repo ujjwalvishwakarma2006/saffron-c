@@ -33,7 +33,7 @@ void vrfy_file_tag() {
 }
 
 void file_decrypt(char* filename) {
-    decrypt_file(file_in_enc_path, filename, sym_key_path);
+    decrypt_file(file_in_enc_path, filename, session_key_path);
 }
 
 void confirm_recv(char* filename) {

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "send_msg.h"
 #include "crypto.h"
 #include "tui.h"
 #include "send.h"
@@ -14,7 +15,7 @@ void write_msg_file(char* message) {
 }
 
 void msg_file_encrypt() {
-    encrypt_file(msg_out_path, msg_out_enc_path, sym_key_path);
+    encrypt_file(msg_out_path, msg_out_enc_path, session_key_path);
 }
 
 void send_msg_enc() {

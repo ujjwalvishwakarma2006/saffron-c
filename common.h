@@ -47,18 +47,18 @@ extern char session_key[KEY_SIZE];      /* Buffer for session key */
 
 
 // -------------------------------- Tag Buffers --------------------------------
-extern char local_msg_tag[TAG_SIZE];    /* Buffer for locally generated message tag */
-extern char recvd_msg_tag[TAG_SIZE];    /* Buffer for received message tag */
-extern char local_file_tag[TAG_SIZE];   /* Buffer for locally generated file tag */
-extern char recvd_file_tag[TAG_SIZE];   /* Buffer for received file tag */
+extern char expected_msg_tag[TAG_SIZE];    /* Buffer for locally generated message tag */
+extern char received_msg_tag[TAG_SIZE];    /* Buffer for received message tag */
+extern char expected_file_tag[TAG_SIZE];   /* Buffer for locally generated file tag */
+extern char received_file_tag[TAG_SIZE];   /* Buffer for received file tag */
 
 
 // ------------------------------- Key File Paths -------------------------------
 extern char* root_ca_cert_path;         /* Path to root CA's certificate */
 extern char* server_cert_path;          /* Path to server's certificate */
 extern char* priv_key_path;             /* Path to server's private key */
-extern char* sym_key_path;              /* AES session key (plaintext) */
-extern char* sym_key_enc_path;          /* AES session key (encrypted with server's public key) */
+extern char* session_key_path;              /* AES session key (plaintext) */
+extern char* encrypted_session_key_path;          /* AES session key (encrypted with server's public key) */
 
 
 // ---------------------------- Temporary File Paths ----------------------------
@@ -69,15 +69,15 @@ extern char* msg_out_tag_path;          /* HMAC tag file of last sent message */
 
 extern char* msg_in_enc_path;           /* Incoming message — encrypted */
 extern char* msg_in_path;               /* Incoming message — decrypted */
-extern char* msg_in_recvd_tag_path;     /* File of Received HMAC tag for last received msg */
-extern char* msg_in_local_tag_path;     /* File of Generate HMAC tag for last received msg */
+extern char* msg_in_received_tag_path;     /* File of Received HMAC tag for last received msg */
+extern char* msg_in_expected_tag_path;     /* File of Generate HMAC tag for last received msg */
 
 extern char* file_out_enc_path;         /* Outgoing file — encrypted */
 extern char* file_out_tag_path;         /* HMAC tag file of last sent file */
 
 extern char* file_in_enc_path;          /* Incoming file — encrypted */
-extern char* file_in_recvd_tag_path;    /* File of Received HMAC tag for last received file */
-extern char* file_in_local_tag_path;    /* File of Generate HMAC tag for last received file */
+extern char* file_in_received_tag_path;    /* File of Received HMAC tag for last received file */
+extern char* file_in_expected_tag_path;    /* File of Generate HMAC tag for last received file */
 
 
 // ------------------------------- ncurses Windows -------------------------------

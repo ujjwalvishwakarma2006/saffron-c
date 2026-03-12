@@ -4,17 +4,32 @@
 void print_usage(const char *program_name) {
     printf("Usage: %s --server|--client [OPTIONS]\n", program_name);
     printf("Options:\n");
+    printf("  --help            Show this help message\n");
     printf("  --server          Run in server mode\n");
     printf("  --client          Run in client mode\n");
-    printf("  --ip <address>    IP address (default: %s)\n", server_ip);
-    printf("  --mp <port>       Message Port number (default: %d)\n", msg_port);
-    printf("  --fp <port>       File Port number (default: %d)\n", file_port);
-    printf("  --help            Show this help message\n");
+    printf("  -ip <address>    IP address (default: %s)\n", server_ip);
+    printf("  -mp <port>       Message Port number (default: %d)\n", msg_port);
+    printf("  -fp <port>       File Port number (default: %d)\n", file_port);
 }
 
 // Function to setup the environment and some global variables based on command line inputs
 // e.g. whether the application is being run as client or server? 
 void setup(int argc, char* argv[]) {
+
+    // Ensure that .saffron-temp directory exists
+    int child_pid = fork();
+    if (child_pid == 0) {
+        char* args[] = {
+            "mkdir", "-p", ".saffron-temp", NULL
+        };
+
+        execvp(args[0], args);
+
+        exit(1);
+    }
+
+    waitpid(child_pid, NULL, 0);
+
     if ((argc < 2) || (strcmp(argv[1], "--server") != 0 && strcmp(argv[1], "--client") != 0)) {
         print_usage("app");
         exit(1);

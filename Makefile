@@ -3,7 +3,8 @@ CFLAGS = -Wall -Wextra -g
 LDFLAGS = -lncursesw -lpthread
 
 SRCS = main.c common.c args.c tui.c server.c client.c key_exchange.c crypto.c send.c send_file.c send_msg.c outgoing.c recv.c recv_file.c recv_msg.c
-OBJS = $(SRCS:.c=.o)
+OBJDIR = objects
+OBJS = $(SRCS:%.c=$(OBJDIR)/%.o)
 TARGET = saffron
 
 all: $(TARGET)
@@ -11,25 +12,30 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
-%.o: %.c
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+$(OBJDIR)/%.o: %.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJS) $(TARGET)
 
 # Dependencies
-common.o: common.c common.h
-args.o: args.c args.h common.h
-tui.o: tui.c tui.h common.h
-server.o: server.c server.h common.h
-client.o: client.c client.h common.h
-key_exchange.o: key_exchange.c key_exchange.h common.h
-crypto.o: crypto.c crypto.h common.h
-outgoing.o: outgoing.c outgoing.h common.h crypto.h tui.h
-send.o: send.c send.h common.h
-send_file.o: send_file.c send_file.h common.h crypto.h tui.h
-send_msg.o: send_msg.c send_msg.h common.h crypto.h tui.h
-recv.o: recv.c recv.h common.h crypto.h tui.h
-recv_file.o: recv_file.c recv_file.h common.h crypto.h tui.h
-recv_msg.o: recv_msg.c recv_msg.h common.h crypto.h tui.h
-main.o: main.c common.h args.h tui.h server.h client.h key_exchange.h crypto.h outgoing.h recv.h recv_file.h recv_msg.h
+$(OBJDIR)/common.o: 		common.h
+$(OBJDIR)/args.o: 			common.h args.h
+$(OBJDIR)/tui.o: 			common.h tui.h
+$(OBJDIR)/server.o: 		common.h server.h
+$(OBJDIR)/client.o: 		common.h client.h
+$(OBJDIR)/crypto.o: 		common.h crypto.h
+$(OBJDIR)/outgoing.o: 		common.h outgoing.h crypto.h tui.h send_file.h send_msg.h
+$(OBJDIR)/send.o: 			common.h send.h
+$(OBJDIR)/send_file.o: 		common.h send.h send_file.h crypto.h tui.h
+$(OBJDIR)/send_msg.o: 		common.h send.h send_msg.h crypto.h tui.h
+$(OBJDIR)/recv.o: 			common.h recv.h
+$(OBJDIR)/recv_file.o: 		common.h recv.h recv_file.h crypto.h tui.h
+$(OBJDIR)/recv_msg.o: 		common.h recv.h recv_msg.h crypto.h tui.h
+$(OBJDIR)/key_exchange.o: 	common.h recv.h send.h key_exchange.h
+$(OBJDIR)/main.o: 			common.h args.h tui.h server.h client.h \
+                  			key_exchange.h crypto.h send.h send_file.h send_msg.h \
+                  			outgoing.h recv.h recv_file.h recv_msg.h

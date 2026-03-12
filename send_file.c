@@ -1,4 +1,5 @@
 #include "common.h"
+#include "send_file.h"
 #include "crypto.h"
 #include "tui.h"
 #include "send.h"
@@ -19,7 +20,7 @@ void send_filename(char* filename) {
 }
 
 void file_encrypt(char* filename) {
-    encrypt_file(filename, file_out_enc_path, sym_key_path);
+    encrypt_file(filename, file_out_enc_path, session_key_path);
 }
 
 void send_file_enc() {
