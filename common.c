@@ -28,7 +28,13 @@ char received_file_tag[TAG_SIZE];
 // ------------------------------- Key File Paths -------------------------------
 char* root_ca_cert_path         = ".saffron-certs/root_ca_certificate.pem";
 char* server_cert_path          = ".saffron-certs/server_certificate.pem";
-char* priv_key_path             = ".saffron-certs/privkey.pem";
+char* client_cert_path          = ".saffron-certs/client_certificate.pem";
+char* server_skey_path             = ".saffron-certs/privkey.pem";
+char* dh_param_path             = ".saffron-certs/dhp.pem";
+char* server_dh_pkey_path       = ".saffron-certs/server_dhpkey.pem";
+char* client_dh_pkey_path       = ".saffron-certs/client_dhpkey.pem";
+char* server_dh_skey_path       = ".saffron-certs/server_dhskey.pem";
+char* client_dh_skey_path       = ".saffron-certs/client_dhskey.pem";
 char* session_key_path          = ".saffron-certs/aeskey.hex";
 char* encrypted_session_key_path= ".saffron-certs/aeskey.enc.bin";
 
@@ -47,6 +53,7 @@ char* file_out_enc_path         = ".saffron-temp/file_out.enc.bin";
 char* file_out_tag_path         = ".saffron-temp/file_out.tag";
 
 char* file_in_enc_path          = ".saffron-temp/file_in.enc.bin";
+char* file_in_path              = ".saffron-temp/file_in.enc.bin";
 char* file_in_received_tag_path = ".saffron-temp/file_in.tag";
 char* file_in_expected_tag_path = ".saffron-temp/file_in.tag.local";
 

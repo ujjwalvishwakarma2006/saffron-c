@@ -64,7 +64,7 @@ Here, in our case, the Root CA is same as the server. Therefore, we use a single
 
 ```bash
 # Generate Root CA key and self-signed certificate
-openssl req -new -x509 -sha256 -keyout privkey.pem -out certificate.crt -days 365 -nodes -newkey rsa:2048
+openssl req -new -x509 -sha256 -keyout privkey.pem -out server_certificate.pem -days 365 -nodes -newkey rsa:2048
 ```
 
 > This certificate should be share with the client in some secure manner beforehand as one of the root CA certificates (`root_ca_certificate.pem`).

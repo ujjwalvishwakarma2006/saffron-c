@@ -1,6 +1,7 @@
 #include "common.h"
 #include "send.h"
 #include "recv.h"
+#include "crypto.h"
 #include "key_exchange.h"
 
 /* Step 1a: Server sends its certificate to the client */
@@ -21,48 +22,44 @@ void client_recv_certificate() {
     wrefresh(log_win);
 }
 
-/* Step 2: Client verifies the certificate via root CA's certificate */
+/* Step 1c: Client verifies server's certificate via root CA's certificate */
 void client_verify_certificate() {
-    int child_pid = fork();
-    if (child_pid == 0) {
-        // Open /dev/null for writing
-        int dev_null = open("/dev/null", O_WRONLY);
-        if (dev_null == -1) {
-            perror("Failed to open /dev/null");
-            exit(1);
-        }
-
-        // Redirect stdout (1) and stderr (2) to /dev/null
-        dup2(dev_null, STDOUT_FILENO);
-        dup2(dev_null, STDERR_FILENO);
-        close(dev_null); // Don't need the extra descriptor anymore
-        
-        char* args[] = {"openssl", "verify", "-CAfile", root_ca_cert_path, server_cert_path, NULL};
-        execvp(args[0], args);
-    
-        // execvp only returns if it fails to execute
-        perror("execvp failed");
-        exit(1);
-    }
-    
-    // Wait for child process to finish generating key.
-    int status;
-    waitpid(child_pid, &status, 0);
-
-    if (WIFEXITED(status)) {
-        int exit_code = WEXITSTATUS(status);
-        if (exit_code != 0) {
-            fatal_error("[CERTIFICATE VERIFICATION FAILED]");
-        }
-    } else {
-        fatal_error("[CERTIFICATE VERIFICATION - CHILD PROCESS ABNORMAL EXIT]");
-    }
-
+    verify_certificate(root_ca_cert_path, server_cert_path);
     sem_wait(&printing);
     wprintw(log_win, "Server certificate verified successfully\n");
     sem_post(&printing);
     wrefresh(log_win);
+}
+
+/* Step 2a: Client sends its certificate to the client */
+void client_send_certificate() {
+    send_file_content(file_socket, client_cert_path, buf_out);
+    sem_wait(&printing);
+    wprintw(log_win, "Certificate Sent\n");
+    sem_post(&printing);
     wrefresh(log_win);
+}
+
+/* Step 2b: Server receives the certificate */
+void server_recv_certificate() {
+    recv_file_content(file_socket, client_cert_path, file_buf_in);
+    sem_wait(&printing);
+    wprintw(log_win, "Server Certificate Received\n");
+    sem_post(&printing);
+    wrefresh(log_win);
+}
+
+/* Step 2c: Server verifies client's certificate via root CA's certificate */
+void server_verify_certificate() {
+    verify_certificate(root_ca_cert_path, client_cert_path);
+    sem_wait(&printing);
+    wprintw(log_win, "Server certificate verified successfully\n");
+    sem_post(&printing);
+    wrefresh(log_win);
+}
+
+void server_generate_dh_params() {
+
 }
 
 /* Step 3: Client generates a session key for further communication */
@@ -142,7 +139,7 @@ void server_recv_session_key() {
 void server_decrypt_session_key() {
     int child_pid = fork(); 
     if (child_pid == 0) {
-        char* args[] = {"openssl", "pkeyutl", "-decrypt", "-inkey", priv_key_path, "-in", encrypted_session_key_path, "-out", session_key_path, NULL};
+        char* args[] = {"openssl", "pkeyutl", "-decrypt", "-inkey", server_skey_path, "-in", encrypted_session_key_path, "-out", session_key_path, NULL};
         execvp(args[0], args);
 
         // execvp only returns if it fails to execute

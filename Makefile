@@ -35,7 +35,7 @@ $(OBJDIR)/send_msg.o: 		common.h send.h send_msg.h crypto.h tui.h
 $(OBJDIR)/recv.o: 			common.h recv.h
 $(OBJDIR)/recv_file.o: 		common.h recv.h recv_file.h crypto.h tui.h
 $(OBJDIR)/recv_msg.o: 		common.h recv.h recv_msg.h crypto.h tui.h
-$(OBJDIR)/key_exchange.o: 	common.h recv.h send.h key_exchange.h
+$(OBJDIR)/key_exchange.o: 	common.h recv.h send.h key_exchange.h crypto.h
 $(OBJDIR)/main.o: 			common.h args.h tui.h server.h client.h \
                   			key_exchange.h crypto.h send.h send_file.h send_msg.h \
                   			outgoing.h recv.h recv_file.h recv_msg.h
