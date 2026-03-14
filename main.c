@@ -3,13 +3,14 @@
 #include "tui.h"
 #include "server.h"
 #include "client.h"
+// #include "file_utils.h"
 #include "key_exchange.h"
-#include "crypto.h"
-#include "send.h"
-#include "send_file.h"
-#include "send_msg.h"
+// #include "crypto.h"
+// #include "send.h"
+// #include "send_file.h"
+// #include "send_msg.h"
 #include "outgoing.h"
-#include "recv.h"
+// #include "recv.h"
 #include "recv_file.h"
 #include "recv_msg.h"
 
@@ -31,10 +32,17 @@ int main(int argc, char* argv[]) {
         // Accept first connections
         msg_socket = server_accept(msg_socket_listen, "Message Transfer");
         file_socket = server_accept(file_socket_listen, "File Transfer");
-
+        
         server_send_certificate();
-        server_recv_session_key();
-        server_decrypt_session_key();
+        server_recv_certificate();
+        server_verify_certificate();
+        server_generate_dh_params();
+        server_generate_dh_pkey();
+        server_sign_dh_packet();
+        server_send_signed_dh();
+        server_recv_signed_dh_pkey();
+        server_extract_dh_pkey();
+        server_derive_secret_key();
     } else if (app_mode == CLIENT) {
         // Initialize two separate connections with the server
         msg_socket = client_connect(server_ip, msg_port, "Message Transfer");
@@ -42,9 +50,13 @@ int main(int argc, char* argv[]) {
 
         client_recv_certificate();
         client_verify_certificate();
-        client_generate_session_key();
-        client_encrypt_session_key();
-        client_send_session_key();
+        client_send_certificate();
+        client_recv_signed_dh();
+        client_extract_dh_packet();
+        client_generate_dh_pkey();
+        client_sign_dh_pkey();
+        client_send_signed_dh_pkey();
+        client_derive_secret_key();
     } else {
         fatal_error("[ENVIRONMENT INIT FAILED]");
     }

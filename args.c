@@ -7,9 +7,9 @@ void print_usage(const char *program_name) {
     printf("  --help            Show this help message\n");
     printf("  --server          Run in server mode\n");
     printf("  --client          Run in client mode\n");
-    printf("  -ip <address>    IP address (default: %s)\n", server_ip);
-    printf("  -mp <port>       Message Port number (default: %d)\n", msg_port);
-    printf("  -fp <port>       File Port number (default: %d)\n", file_port);
+    printf("  -ip <address>     IP address (default: %s)\n", server_ip);
+    printf("  -mp <port>        Message Port number (default: %d)\n", msg_port);
+    printf("  -fp <port>        File Port number (default: %d)\n", file_port);
 }
 
 // Function to setup the environment and some global variables based on command line inputs

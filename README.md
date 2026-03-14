@@ -58,16 +58,78 @@ Apart from these two, `gcc` and `make` are also required which are by default pr
 
 ## Setup
 
-### 1. Generate server credentials (run once on the server machine)
-
-Here, in our case, the Root CA is same as the server. Therefore, we use a single command to generate everything in one go. 
-
+### 1. Clone and setup server side 
 ```bash
-# Generate Root CA key and self-signed certificate
-openssl req -new -x509 -sha256 -keyout privkey.pem -out server_certificate.pem -days 365 -nodes -newkey rsa:2048
+git clone https://github.com/ujjwalvishwakarma2006/saffron-c
+cd saffron-c
+mkdir -p .saffron-certs
 ```
 
-> This certificate should be share with the client in some secure manner beforehand as one of the root CA certificates (`root_ca_certificate.pem`).
+
+### 1. Generate server credentials (run once on the server machine)
+
+Here, in our case, the Root CA is same as the server. Therefore, we use a single command to generate a certificate along with a private key. This is for simulation purpose only. We assume that this procedure has already happened via some secure means. 
+
+```bash
+
+cd .saffron-certs 
+
+# On the Server side: Generate Root CA key and self-signed certificate
+openssl req -new -x509 -sha256 -keyout server_rsa_skey.pem -out server_certificate.pem -days 365 -nodes -newkey rsa:2048
+
+# Copy the server's certificate to root ca's certificate
+cp server_certificate.pem rootca_certificate.pem
+
+# Generate private key and Certificate Signing Request (CSR) for the client
+openssl req -new -newkey rsa:2048 -nodes \  
+  -keyout client_rsa_skey.pem \
+  -out client_request.csr \
+  -subj "/C=IN/ST=RJ/L=Jaipur/O=Saffron/CN=Client"
+
+# Sign the client's request using Root CA's secret(private) key
+openssl x509 -req -in client_request.csr \
+  -CA rootca_certificate.pem \
+  -CAkey server_rsa_skey.pem \
+  -CAcreateserial \
+  -out client_certificate.pem \
+  -days 365 \
+  -sha256
+
+# Check files
+ls
+client_certificate.pem
+client_request.csr
+client_rsa_skey.pem
+rootca_certificate.pem
+server_certificate.pem
+server_rsa_skey.pem
+
+# Remove client CSR
+rm client_request.csr
+
+# Move client's certificate, key and the root ca's certificate to the .saffron-certs folder in the folder where you are testing from client side. 
+# For example, the server side was
+~/saffron-c
+
+mkdir -p ~/client-saffron/.saffron-certs
+cd client-saffron/.saffron-certs
+cp ../../saffron-c/rootca_certificate.pem
+mv ../../saffron-c/{client_certificate.pem,client_rsa_skey.pem}
+
+# The final state of ~/saffron-c/.saffron-certs folder
+ls
+rootca_certificate.pem
+server_certificate.pem
+server_rsa_skey.pem
+
+# The final state of ~/client-saffron/.saffron-certs folder
+ls
+rootca_certificate.pem
+client_certificate.pem
+client_rsa_skey.pem
+```
+
+> This certificate should be share with the client in some secure manner beforehand as one of the root CA certificates (`rootca_certificate.pem`).
 
 ### 2. Compile
 

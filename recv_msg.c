@@ -4,42 +4,12 @@
 #include "recv.h"
 #include "recv_msg.h"
 
-void read_file_content(char* buffer, char* filename) {
-    FILE* fp;
-    uint32_t file_size;
-    
-    fp = fopen(filename, "r");
-    if (fp == NULL) fatal_error("[ERROR OPENING FILE]");
-
-    fseek(fp, 0, SEEK_END);
-    file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    fread(buffer, 1, file_size, fp);
-
-    fclose(fp);
+void recv_signed_enc_msg() {
+    recv_file_content(msg_socket, msg_in_signed_path, msg_buf_in);
 }
 
-void recv_msg_enc() {
-    recv_file_content(msg_socket, msg_in_enc_path, msg_buf_in);
-}
-
-void recv_msg_tag() {
-    recv_file_content(msg_socket, msg_in_received_tag_path, msg_buf_in);
-}
-
-bool vrfy_msg_tag() {
-    generate_hmac(msg_in_expected_tag_path, msg_in_enc_path);
-
-    // Read locally generated HMAC
-    read_file_content(expected_msg_tag, msg_in_expected_tag_path);
-    
-    // Read received HMAC
-    read_file_content(received_msg_tag, msg_in_received_tag_path);
-
-    // Return true if both HMACs match
-    if (strncmp(expected_msg_tag, received_msg_tag, TAG_SIZE) != 0) return true;
-
-    return false;
+void extract_enc_msg() {
+    cms_extract_file(msg_in_signed_path, root_ca_cert_path, msg_in_enc_path);
 }
 
 void msg_decrypt() {
@@ -70,16 +40,12 @@ void msg_display() {
     fclose(fp);
 }
 
-
-void* msg_recv_loop() {
+void* msg_recv_loop(void* args) {
     while (1) {
-        recv_msg_enc();
-        recv_msg_tag();
-        // Do not show the message to the user, if integrit isn't verified
-        if (vrfy_msg_tag() == false) continue;
+        recv_signed_enc_msg();
+        extract_enc_msg();
         msg_decrypt();
         msg_display();
-
         usleep(100000);
     }
     return NULL;

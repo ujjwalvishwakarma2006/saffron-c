@@ -56,7 +56,7 @@ void confirm_recv(char* filename) {
 }
 
 
-void* file_recv_loop() {
+void* file_recv_loop(void* args) {
     char filename[128];
     
     while (1) {

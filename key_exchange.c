@@ -1,166 +1,125 @@
 #include "common.h"
+#include "key_exchange.h"
 #include "send.h"
 #include "recv.h"
 #include "crypto.h"
-#include "key_exchange.h"
+#include "file_utils.h"
+
+/* Display and refresh after printing to the window */
+void display_and_refresh(WINDOW* window, char* message) {
+    sem_wait(&printing);
+    wprintw(window, message);
+    sem_post(&printing);
+    wrefresh(window);
+}
 
 /* Step 1a: Server sends its certificate to the client */
 void server_send_certificate() {
     send_file_content(file_socket, server_cert_path, buf_out);
-    sem_wait(&printing);
-    wprintw(log_win, "Certificate Sent\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+    display_and_refresh(log_win, "Certificate Sent\n");
 }
 
 /* Step 1b: Client receives the certificate */
 void client_recv_certificate() {
     recv_file_content(file_socket, server_cert_path, file_buf_in);
-    sem_wait(&printing);
-    wprintw(log_win, "Server Certificate Received\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+    display_and_refresh(log_win, "Server Certificate Received\n");
 }
 
-/* Step 1c: Client verifies server's certificate via root CA's certificate */
+/* Step 1c: Client verifies server's certificate against root CA's certificate */
 void client_verify_certificate() {
     verify_certificate(root_ca_cert_path, server_cert_path);
-    sem_wait(&printing);
-    wprintw(log_win, "Server certificate verified successfully\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+    display_and_refresh(log_win, "Server certificate verified successfully\n");
 }
 
-/* Step 2a: Client sends its certificate to the client */
+/* Step 2a: Client sends its certificate to the server */
 void client_send_certificate() {
     send_file_content(file_socket, client_cert_path, buf_out);
-    sem_wait(&printing);
-    wprintw(log_win, "Certificate Sent\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+    display_and_refresh(log_win, "Certificate Sent\n");
 }
 
 /* Step 2b: Server receives the certificate */
 void server_recv_certificate() {
     recv_file_content(file_socket, client_cert_path, file_buf_in);
-    sem_wait(&printing);
-    wprintw(log_win, "Server Certificate Received\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+    display_and_refresh(log_win, "Client Certificate Received\n");
 }
 
-/* Step 2c: Server verifies client's certificate via root CA's certificate */
+/* Step 2c: Server verifies client's certificate against root CA's certificate */
 void server_verify_certificate() {
     verify_certificate(root_ca_cert_path, client_cert_path);
-    sem_wait(&printing);
-    wprintw(log_win, "Server certificate verified successfully\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+    display_and_refresh(log_win, "Client certificate verified successfully\n");
 }
 
+/* Step 3a: Server generates Diffie-Hellman parameters */
 void server_generate_dh_params() {
-
+    generate_dh_params(dh_param_path);
 }
 
-/* Step 3: Client generates a session key for further communication */
-void client_generate_session_key() {
-    int child_pid = fork(); 
-    if (child_pid == 0) {
-        char* args[] = {"openssl", "rand", "-hex", "-out", session_key_path, "32", NULL};
-        execvp(args[0], args);
-
-        // execvp only returns if it fails to execute
-        perror("execvp failed");
-        exit(1);
-    }
-
-    int status;
-    waitpid(child_pid, &status, 0);
-
-    if (WIFEXITED(status)) {
-        int exit_code = WEXITSTATUS(status);
-        if (exit_code != 0) {
-            fatal_error("[SESSION KEY GENERATION FAILED]");
-        }
-    } else {
-        fatal_error("[SESSION KEY GENERATION - CHILD PROCESS ABNORMAL EXIT]");
-    }
-
-    // Read session key into the session_key buffer
-    FILE* fp = fopen(session_key_path, "r");
-    fread(session_key, 1, 65, fp);
-    fclose(fp);
+/* Step 3b: Server generates its public key and appends in the dh_param file */
+void server_generate_dh_pkey() {
+    generate_dh_key_pair(dh_param_path, server_dh_skey_path, server_dh_pkey_path);
+    char* file_names[] = {dh_param_path, server_dh_pkey_path};
+    merge_files(2, file_names, file_out_path);
 }
 
-/* Step 4: Client encrypts the session key using server's certificate */
-void client_encrypt_session_key() {
-    int child_pid = fork(); 
-    if (child_pid == 0) {
-        char* args[] = {"openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", server_cert_path, "-certin", "-in", session_key_path, "-out", encrypted_session_key_path, NULL};
-        execvp(args[0], args);
-
-        // execvp only returns if it fails to execute
-        perror("execvp failed");
-        exit(1);
-    }
-
-    int status;
-    waitpid(child_pid, &status, 0);
-
-    if (WIFEXITED(status)) {
-        int exit_code = WEXITSTATUS(status);
-        if (exit_code != 0) {
-            fatal_error("[SESSION KEY ENCRYPTION FAILED]");
-        }
-    } else {
-        fatal_error("[SESSION KEY ENCRYPTION - CHILD PROCESS ABNORMAL EXIT]");
-    }
+/* Step 3c: Server signs Diffie-Hellman packet with it's RSA private key */
+void server_sign_dh_packet() {
+    cms_sign_file(file_out_path, server_cert_path, server_skey_path, file_out_signed_path);
 }
 
-/* Step 5a: Client sends the encrypted session key to the server */
-void client_send_session_key() {
-    send_file_content(file_socket, encrypted_session_key_path, buf_out);
-    sem_wait(&printing);
-    wprintw(log_win, "Session Key sent\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+/* Step 3d: Server sends signed DH packet to the client */
+void server_send_signed_dh() {
+    send_file_content(file_socket, file_out_signed_path, buf_out);
+    display_and_refresh(log_win, "DH Parameters sent\n");
 }
 
-/* Step 5b: Server receives the encrypted session key */
-void server_recv_session_key() {
-    recv_file_content(file_socket, encrypted_session_key_path, file_buf_in);
-    sem_wait(&printing);
-    wprintw(log_win, "Session Key Received\n");
-    sem_post(&printing);
-    wrefresh(log_win);
+/* Step 4: Client receives the signed DH packet */
+void client_recv_signed_dh() {
+    recv_file_content(file_socket, file_in_signed_path, file_buf_in);
 }
 
-/* Step 6: Server decrypts the encrypted session key using its private key */
-void server_decrypt_session_key() {
-    int child_pid = fork(); 
-    if (child_pid == 0) {
-        char* args[] = {"openssl", "pkeyutl", "-decrypt", "-inkey", server_skey_path, "-in", encrypted_session_key_path, "-out", session_key_path, NULL};
-        execvp(args[0], args);
+/* Step 5: Client extracts the contents of signed DH packet if the signature is valid */
+void client_extract_dh_packet() {
+    cms_extract_file(file_in_signed_path, root_ca_cert_path, file_in_path);
+    char* out_files[] = {dh_param_path, server_dh_pkey_path};
+    split_file(file_in_path, 2, out_files);
+    display_and_refresh(log_win, "DH Parameters and Server Public Key received\n");
+}
 
-        // execvp only returns if it fails to execute
-        perror("execvp failed");
-        exit(1);
-    }
+/* Step 5a: Client generates its public key based on received DH parameters */
+void client_generate_dh_pkey() {
+    generate_dh_key_pair(dh_param_path, client_dh_skey_path, client_dh_pkey_path);
+}
 
-    int status;
-    waitpid(child_pid, &status, 0);
+/* Step 5b: Client signs its public key with its RSA private key */
+void client_sign_dh_pkey() {
+    cms_sign_file(client_dh_pkey_path, client_cert_path, client_skey_path, file_out_signed_path);
+}
 
-    if (WIFEXITED(status)) {
-        int exit_code = WEXITSTATUS(status);
-        if (exit_code != 0) {
-            fatal_error("[SESSION KEY DECRYPTION FAILED]");
-        }
-    } else {
-        fatal_error("[SESSION KEY DECRYPTION - CHILD PROCESS ABNORMAL EXIT]");
-    }
+/* Step 5c: Client sends its signed public key to the server */
+void client_send_signed_dh_pkey() {
+    send_file_content(file_socket, file_out_signed_path, buf_out);
+    display_and_refresh(log_win, "DH Public Key sent\n");
+}
 
-    // Read session key into the session_key buffer
-    FILE* fp = fopen(session_key_path, "r");
-    fread(session_key, 1, 65, fp);
-    fclose(fp);
+/* Step 6: Server receives signed public key from the client */
+void server_recv_signed_dh_pkey() {
+    recv_file_content(file_socket, file_in_signed_path, file_buf_in);
+}
+
+/* Step 7: Server extracts client's public key if it's signature is verified */
+void server_extract_dh_pkey() {
+    cms_extract_file(file_in_signed_path, root_ca_cert_path, client_dh_pkey_path);
+    display_and_refresh(log_win, "Client Public Key received\n");
+}
+
+/* Step 8a: Client derives DH secret key */
+void client_derive_secret_key() {
+    derive_dh_skey(client_dh_pkey_path, server_dh_pkey_path, session_key_path);
+    display_and_refresh(log_win, "Secret Key derived\n");
+}
+
+/* Step 8a: Server derives DH secret key */
+void server_derive_secret_key() {
+    derive_dh_skey(server_dh_pkey_path, client_dh_pkey_path, session_key_path);
+    display_and_refresh(log_win, "Secret Key derived\n");
 }

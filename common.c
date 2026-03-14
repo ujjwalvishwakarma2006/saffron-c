@@ -15,47 +15,41 @@ int msg_socket, file_socket;
 char msg_buf_in[BUF_SIZE];
 char file_buf_in[BUF_SIZE];
 char buf_out[BUF_SIZE];
-char session_key[KEY_SIZE];
 
 
-// -------------------------------- Tag Buffers --------------------------------
-char expected_msg_tag[TAG_SIZE];
-char received_msg_tag[TAG_SIZE];
-char expected_file_tag[TAG_SIZE];
-char received_file_tag[TAG_SIZE];
-
-
-// ------------------------------- Key File Paths -------------------------------
-char* root_ca_cert_path         = ".saffron-certs/root_ca_certificate.pem";
+// ------------------------------ Permanent Paths ------------------------------
+char* root_ca_cert_path         = ".saffron-certs/rootca_certificate.pem";
 char* server_cert_path          = ".saffron-certs/server_certificate.pem";
 char* client_cert_path          = ".saffron-certs/client_certificate.pem";
-char* server_skey_path             = ".saffron-certs/privkey.pem";
-char* dh_param_path             = ".saffron-certs/dhp.pem";
-char* server_dh_pkey_path       = ".saffron-certs/server_dhpkey.pem";
-char* client_dh_pkey_path       = ".saffron-certs/client_dhpkey.pem";
-char* server_dh_skey_path       = ".saffron-certs/server_dhskey.pem";
-char* client_dh_skey_path       = ".saffron-certs/client_dhskey.pem";
-char* session_key_path          = ".saffron-certs/aeskey.hex";
-char* encrypted_session_key_path= ".saffron-certs/aeskey.enc.bin";
+char* server_skey_path          = ".saffron-certs/server_rsa_skey.pem";
+char* client_skey_path          = ".saffron-certs/client_rsa_skey.pem";
 
 
-// ---------------------------- Temporary File Paths ----------------------------
-char* msg_out_path              = ".saffron-temp/msg_out.txt";
-char* msg_out_enc_path          = ".saffron-temp/msg_out.enc.bin";
-char* msg_out_tag_path          = ".saffron-temp/msg_out.tag";
+// ---------------------------- Temporary Key Paths ----------------------------
+char* dh_param_path             = ".saffron-temp/dhp.pem";
+char* server_dh_pkey_path       = ".saffron-temp/server_dh_pkey.pem";
+char* client_dh_pkey_path       = ".saffron-temp/client_dh_pkey.pem";
+char* server_dh_skey_path       = ".saffron-temp/server_dh_skey.pem";
+char* client_dh_skey_path       = ".saffron-temp/client_dh_skey.pem";
+char* session_key_path          = ".saffron-temp/session_key.pem";
 
-char* msg_in_enc_path           = ".saffron-temp/msg_in.enc.bin";
-char* msg_in_path               = ".saffron-temp/msg_in.txt";
-char* msg_in_received_tag_path  = ".saffron-temp/msg_in.tag";
-char* msg_in_expected_tag_path  = ".saffron-temp/msg_in.tag.local";
 
-char* file_out_enc_path         = ".saffron-temp/file_out.enc.bin";
-char* file_out_tag_path         = ".saffron-temp/file_out.tag";
+// --------------------------- Temporary File Paths ----------------------------
+char* msg_out_path              = ".saffron-temp/msg.out";
+char* msg_out_enc_path          = ".saffron-temp/msg.out.enc";
+char* msg_out_signed_path       = ".saffron-temp/msg.out.enc.signed";
 
-char* file_in_enc_path          = ".saffron-temp/file_in.enc.bin";
-char* file_in_path              = ".saffron-temp/file_in.enc.bin";
-char* file_in_received_tag_path = ".saffron-temp/file_in.tag";
-char* file_in_expected_tag_path = ".saffron-temp/file_in.tag.local";
+char* msg_in_signed_path        = ".saffron-temp/msg.in.enc.signed";
+char* msg_in_enc_path           = ".saffron-temp/msg.in.enc";
+char* msg_in_path               = ".saffron-temp/msg.in";
+
+char* file_out_path             = ".saffron-temp/file.out";
+char* file_out_enc_path         = ".saffron-temp/file.out.enc";
+char* file_out_signed_path      = ".saffron-temp/file.out.enc.signed";
+
+char* file_in_signed_path       = ".saffron-temp/file.in.enc.signed";
+char* file_in_enc_path          = ".saffron-temp/file.in.enc";
+char* file_in_path              = ".saffron-temp/file.in";
 
 
 // ------------------------------- ncurses Windows -------------------------------

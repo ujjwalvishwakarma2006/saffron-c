@@ -37,7 +37,7 @@ void verify_certificate(char* root_cert, char* peer_cert) {
     }
 }
 
-// Generate DH parameters for key generation
+// Generate Diffie-Hellman parameters in out_file
 void generate_dh_params(char* dhp_file) {
     int child_pid = fork(); 
     if (child_pid == 0) {
@@ -45,7 +45,7 @@ void generate_dh_params(char* dhp_file) {
             "openssl", "genpkey", "-genparam", 
             "-algorithm", "DH", 
             "-out", dhp_file, NULL
-        }
+        };
         execvp(args[0], args);
         fatal_error("[`execvp` SYSCALL FAILURE]");
     }
@@ -64,7 +64,7 @@ void generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
             "openssl", "genpkey", 
             "-paramfile", dhp_file, 
             "-out", skey_file, NULL
-        }
+        };
         execvp(args[0], args);
         fatal_error("[`execvp` SYSCALL FAILURE]");
     }
@@ -75,9 +75,58 @@ void generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
     if (child_pid == 0) {
         char* args[] = {
             "openssl", "pkey", 
-            "-pubin", skey_file, 
+            "-in", skey_file, 
             "-pubout", "-out", pkey_file, NULL
-        }
+        };
+        execvp(args[0], args);
+        fatal_error("[`execvp` SYSCALL FAILURE]");
+    }
+    waitpid(child_pid, NULL, 0);
+}
+
+// Derive DH secret key, given both client and server public keys
+void derive_dh_skey(char* host_dh_skey, char* peer_dh_pkey, char* dh_skey_file) {
+    int child_pid = fork();
+    if (child_pid == 0) {
+        char* args[] = {
+            "openssl", "pkeyutl", "-derive",
+            "-inkey", host_dh_skey,
+            "-peerkey", peer_dh_pkey, 
+            "-out", dh_skey_file, NULL
+        };
+        execvp(args[0], args);
+        fatal_error("[`execvp` SYSCALL FAILURE]");
+    }
+    waitpid(child_pid, NULL, 0);
+}
+
+// Modern sign and concatenate the signature with the file into a single file 
+void cms_sign_file(char* in_file, char* signer_cert, char* signer_skey, char* out_file) {
+    int child_pid = fork(); 
+    if (child_pid == 0) {
+        char* args[] = {
+            "openssl", "cms", "-sign", 
+            "-in", in_file, 
+            "-signer", signer_cert, 
+            "-inkey", signer_skey, 
+            "-out", out_file, NULL
+        };
+        execvp(args[0], args);
+        fatal_error("[`execvp` SYSCALL FAILURE]");
+    }
+    waitpid(child_pid, NULL, 0);
+}
+
+// Verify the signature and extract the file after verification in one single step
+void cms_extract_file(char* in_file, char* root_cert, char* out_file) {
+    int child_pid = fork(); 
+    if (child_pid == 0) {
+        char* args[] = {
+            "openssl", "cms", "-verify", 
+            "-in", in_file, 
+            "-CAfile", root_cert, 
+            "-out", out_file, NULL
+        };
         execvp(args[0], args);
         fatal_error("[`execvp` SYSCALL FAILURE]");
     }
@@ -114,37 +163,4 @@ void decrypt_file(char* enc_file_name, char* file_name, char* key_file) {
         fatal_error("[`execvp` SYSCALL FAILURE]");
     }
     waitpid(child_pid, NULL, 0);    
-}
-
-// Modern sign and concatenate the signature with the file into a single file 
-void cms_sign_file(char* in_file, char* signer_cert, char* signer_skey, char* out_file) {
-    child_pid = fork(); 
-    if (child_pid == 0) {
-        char* args[] = {
-            "openssl", "cms", "-sign", 
-            "-in", in_file, 
-            "-signer", signer_cert, 
-            "-inkey", signer_skey, 
-            "-out", out_file, NULL
-        }
-        execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
-    }
-    waitpid(child_pid, NULL, 0);
-}
-
-// Verify the signature and extract the file after verification in one single step
-void cms_extract_file(char* in_file, char* root_cert, char* out_file) {
-    child_pid = fork(); 
-    if (child_pid == 0) {
-        char* args[] = {
-            "openssl", "cms", "-verify", 
-            "-in", in_file, 
-            "-CAfile", root_cert, 
-            "-out", out_file, NULL
-        }
-        execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
-    }
-    waitpid(child_pid, NULL, 0);
 }

@@ -3,12 +3,19 @@
 
 void read_file_content(char* buffer, char* filename);
 
-void recv_msg_enc();    /* Receive encrypted message */
-void recv_msg_tag();    /* Receive HMAC tag for the message */
-bool vrfy_msg_tag();    /* Verify the tag of the message */
-void msg_decrypt();     /* Decrypt the encrypted message */
-void msg_display();     /* Display the decrypted message */
+/* Receive encrypted message */
+void recv_signed_enc_msg();
 
-void* msg_recv_loop();  /* Thread function: receive, verify, decrypt and display messages in a loop */
+/* Extract the encrypted message if it's signature is verified */
+void extract_enc_msg();
+
+/* Decrypt the encrypted message */
+void msg_decrypt();
+
+/* Display the decrypted message */
+void msg_display();
+
+/* Thread function: receive, verify, decrypt and display messages in a loop */
+void* msg_recv_loop();
 
 #endif // !MSG_RECV_H
