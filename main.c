@@ -30,13 +30,13 @@ int main(int argc, char* argv[]) {
         file_socket_listen = server_start(server_ip, file_port, "File Transfer");
   
         // Accept first connections
-        msg_socket = server_accept(msg_socket_listen, "Message Transfer");
-        file_socket = server_accept(file_socket_listen, "File Transfer");
+        msg_socket = server_accept(msg_socket_listen);
+        file_socket = server_accept(file_socket_listen);
         
         server_send_certificate();
         server_recv_certificate();
         server_verify_certificate();
-        server_generate_dh_params();
+        // server_generate_dh_params();
         server_generate_dh_pkey();
         server_sign_dh_packet();
         server_send_signed_dh();

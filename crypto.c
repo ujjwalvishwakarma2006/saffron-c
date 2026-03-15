@@ -1,22 +1,26 @@
 #include "common.h"
 #include "crypto.h"
 
+// Utility function to disable outputting on terminal
+void disable_terminal_output() {
+    // Open /dev/null to print openssl output 
+    int dev_null = open("/dev/null", O_WRONLY);
+    if (dev_null == -1) {
+        perror("Failed to open /dev/null");
+        exit(1);
+    }
+
+    // Redirect stdout (1) and stderr (2) to /dev/null
+    dup2(dev_null, STDOUT_FILENO);
+    dup2(dev_null, STDERR_FILENO);
+    close(dev_null);
+}
+
 // Verify peer_cert against root_cert
 void verify_certificate(char* root_cert, char* peer_cert) {
     int child_pid = fork();
     if (child_pid == 0) {
-        // Open /dev/null to print openssl verify output 
-        int dev_null = open("/dev/null", O_WRONLY);
-        if (dev_null == -1) {
-            perror("Failed to open /dev/null");
-            exit(1);
-        }
-
-        // Redirect stdout (1) and stderr (2) to /dev/null
-        dup2(dev_null, STDOUT_FILENO);
-        dup2(dev_null, STDERR_FILENO);
-        close(dev_null);
-        
+        disable_terminal_output();
         char* args[] = {"openssl", "verify", "-CAfile", root_cert, peer_cert, NULL};
         execvp(args[0], args);
         
@@ -41,6 +45,7 @@ void verify_certificate(char* root_cert, char* peer_cert) {
 void generate_dh_params(char* dhp_file) {
     int child_pid = fork(); 
     if (child_pid == 0) {
+        disable_terminal_output();
         char* args[] = {
             "openssl", "genpkey", "-genparam", 
             "-algorithm", "DH", 
@@ -60,6 +65,7 @@ void generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
     // Step 1: First generate a secret(private) key
     child_pid = fork(); 
     if (child_pid == 0) {
+        disable_terminal_output();
         char* args[] = {
             "openssl", "genpkey", 
             "-paramfile", dhp_file, 
@@ -73,6 +79,7 @@ void generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
     // Step 2: Extract pubkey from the secret key
     child_pid = fork(); 
     if (child_pid == 0) {
+        disable_terminal_output();
         char* args[] = {
             "openssl", "pkey", 
             "-in", skey_file, 
@@ -88,6 +95,7 @@ void generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
 void derive_dh_skey(char* host_dh_skey, char* peer_dh_pkey, char* dh_skey_file) {
     int child_pid = fork();
     if (child_pid == 0) {
+        disable_terminal_output();
         char* args[] = {
             "openssl", "pkeyutl", "-derive",
             "-inkey", host_dh_skey,
@@ -104,8 +112,9 @@ void derive_dh_skey(char* host_dh_skey, char* peer_dh_pkey, char* dh_skey_file) 
 void cms_sign_file(char* in_file, char* signer_cert, char* signer_skey, char* out_file) {
     int child_pid = fork(); 
     if (child_pid == 0) {
+        disable_terminal_output();
         char* args[] = {
-            "openssl", "cms", "-sign", 
+            "openssl", "cms", "-sign", "-binary", 
             "-in", in_file, 
             "-signer", signer_cert, 
             "-inkey", signer_skey, 
@@ -121,8 +130,9 @@ void cms_sign_file(char* in_file, char* signer_cert, char* signer_skey, char* ou
 void cms_extract_file(char* in_file, char* root_cert, char* out_file) {
     int child_pid = fork(); 
     if (child_pid == 0) {
+        disable_terminal_output();
         char* args[] = {
-            "openssl", "cms", "-verify", 
+            "openssl", "cms", "-verify", "-binary",
             "-in", in_file, 
             "-CAfile", root_cert, 
             "-out", out_file, NULL

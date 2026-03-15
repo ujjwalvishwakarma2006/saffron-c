@@ -7,7 +7,7 @@ void send_file_content(int connection_socket, char* filepath, char* buffer) {
     FILE* fp;
 
     // Open the file
-    fp = fopen(filepath, "r");
+    fp = fopen(filepath, "rb");
     if (fp == NULL) fatal_error("[ERROR OPENING FILE]");
 
     // Send content size (in bytes)

@@ -30,12 +30,13 @@ Apart from these two, `gcc` and `make` are also required which are by default pr
 
 ## Features
 
-- **End-to-end encrypted** using AES-256-CBC for messages and files, and RSA-2048 + X.509 certificates for session key exchange.
-- **Certificate-based authentication:** the server sends its X.509 certificate to the client, which verifies it against a trusted Root CA before proceeding.
-- **Per-session symmetric key:** the client generates a fresh AES-256 key every session, encrypts it with the server's RSA public key extracted from the certificate, and sends it to the server.
-- **Dual-channel transfer:** separate TCP connections (separate ports) for messages and files running concurrently.
-- **Threaded architecture:** two dedicated threads handle incoming messages and files; the main thread handles all outgoing transfers.
-- **TUI built with ncurses** — header with ASCII logo and connection info, scrollable color-coded log window, dedicated input window, and a hint bar.
+- **End-to-end encrypted** using AES-256-CBC for messages and files, with an Authenticated Diffie-Hellman Key Exchange (via OpenSSL) ensuring forward secrecy.
+- **Mutual Certificate-based authentication:** Both the server and the client exchange their X.509 certificates and verify them against a trusted Root CA using OpenSSL CMS before proceeding.
+- **Non-repudiation and Integrity:** Every single message and file transmitted is encrypted and then digitally signed using modern OpenSSL CMS syntax, guaranteeing authenticity and preventing tampering.
+- **Dynamic Session Keys:** A shared symmetric AES-256 key is derived dynamically on both ends using the exchanged Diffie-Hellman parameters.
+- **Dual-channel transfer:** Separate TCP connections (separate ports) for messages and files running concurrently.
+- **Threaded architecture:** Two dedicated threads handle incoming messages and files; the main thread handles all outgoing transfers.
+- **TUI built with ncurses** — Header with ASCII logo and connection info, scrollable color-coded log window, dedicated input window, and a hint bar.
 - **Color-coded log:** `You:` in green, peer name in magenta, file transfer logs in yellow, filenames in cyan.
 - **Dynamic input buffer** that grows as needed via `realloc()`.
 
@@ -45,14 +46,13 @@ Apart from these two, `gcc` and `make` are also required which are by default pr
 
 | Severity | Issue |
 |---|---|
-| 🔴 Security | Not forward secret — RSA key exchange means compromise of the server's private key exposes all past session keys. A Diffie-Hellman based exchange (e.g., ECDHE) would fix this. |
-| 🔴 Security | Filenames and their lengths are transmitted unencrypted. |
-| 🔴 Security | Vulnerable to DoS — `MSG_WAITALL` blocks indefinitely if a peer connects but sends incomplete or no data, hanging the entire session with no timeout. |
-| 🔴 Security | No explicit integrity verification — there is no MAC or HMAC; correctness relies solely on AES-CBC padding, which cannot detect intentional tampering. An HMAC-SHA256 over ciphertext (encrypt-then-MAC) would fix this. |
-| 🟡 Feature | Only one client can connect at a time — no support for multiple simultaneous connections. |
-| 🟡 Feature | No terminal resize handling — TUI layout is fixed at startup dimensions. |
-| 🔵 Dependency | All cryptographic operations are performed by forking `openssl` as child processes, requiring `openssl` to be installed and available on `PATH`. |
-| 🔵 Performance | The input buffer starts at a single byte and grows one character at a time via `realloc()`, causing a heap allocation on every keystroke. Starting with a reasonably-sized fixed capacity (e.g., 256 bytes) and only reallocating when input exceeds it would eliminate most of these redundant allocations. |
+| Security | Filenames and their lengths are currently transmitted unencrypted before the file contents are sent. |
+| Security | Vulnerable to DoS attacks — `MSG_WAITALL` blocks indefinitely if a peer connects but sends incomplete or no data, hanging the entire session with no timeout. |
+| Feature | Only one client can connect at a time — no support for multiple simultaneous connections. |
+| Feature | No terminal resize handling — TUI layout is fixed at startup dimensions, and resizing can break the layout. |
+| Dependency | All cryptographic operations are performed by forking `openssl` as child processes, requiring the `openssl` binary to be installed and available on the system `PATH`. |
+| Performance | Creating child fork processes for every cryptographic operation overheads the CPU. Integrating `libcrypto` or `libssl` programmatically would drastically improve performance. |
+| Performance | The input buffer starts at a single byte and grows one character at a time via `realloc()`, causing a heap allocation on every keystroke. Starting with a reasonably-sized fixed capacity (e.g., 256 bytes) and only reallocating when input exceeds it would eliminate most of these redundant allocations. |
 
 ---
 
@@ -66,9 +66,9 @@ mkdir -p .saffron-certs
 ```
 
 
-### 1. Generate server credentials (run once on the server machine)
+### 2. Generate server credentials (run once on the server machine)
 
-Here, in our case, the Root CA is same as the server. Therefore, we use a single command to generate a certificate along with a private key. This is for simulation purpose only. We assume that this procedure has already happened via some secure means. 
+Here, in our case, the Root CA is the same as the server. Therefore, we use a single command to generate a certificate along with a private key. This is for simulation purposes only. We assume that this procedure has already happened via some secure means. 
 
 ```bash
 
@@ -129,15 +129,15 @@ client_certificate.pem
 client_rsa_skey.pem
 ```
 
-> This certificate should be share with the client in some secure manner beforehand as one of the root CA certificates (`rootca_certificate.pem`).
+> This certificate should ideally be shared with the client in some secure manner beforehand as one of the root CA certificates (`rootca_certificate.pem`).
 
-### 2. Compile
+### 3. Compile
 
 ```bash
 make
 ```
 
-### 3. Run
+### 4. Run
 
 ```bash
 # On the server machine
@@ -146,36 +146,6 @@ make
 # On the client machine
 ./saffron --client -ip <server-ip>
 ```
-
----
-
-## Encryption Protocol (Similar to TLS)
-
-```
-Client                                    Server
-  |                                          |
-  |  <---- server_certificate.pem -----------|  (over file socket)
-  |                                          |
-  | verify certificate against root CA       |
-  |                                          |
-  | generate AES-256 session key             |
-  | encrypt session key with server pubkey   |
-  |                                          |
-  |  ----- encrypted session key ----------->|  (over file socket)
-  |                                          |
-  |         server decrypts session key      |
-  |                                          |
-  |  <===== AES-256-CBC encrypted session ==>|  (both channels)
-```
-
-1. Server sends its X.509 certificate (`server_cert_path`) to the client over the file socket.
-2. Client verifies the certificate against the Root CA certificate (`root_ca_cert_path`) using `openssl verify`.
-3. Client generates a 256-bit AES session key using `openssl rand`.
-4. Client encrypts the session key with the server's public key (extracted from the certificate) using `openssl pkeyutl -certin`.
-5. Client sends the encrypted session key to the server.
-6. Server decrypts the session key using its RSA private key via `openssl pkeyutl`.
-7. All subsequent messages and files are encrypted/decrypted using `openssl enc -aes-256-cbc` with the shared session key.
-
 ---
 
 ## Usage
@@ -199,6 +169,48 @@ Options:
 | `/f <filepath>` | Send a file to the peer |
 | `/q` | Quit Saffron |
 | Any other input | Send as a text message (Default) |
+
+---
+
+## Encryption Protocol
+
+The protocol performs mutual verification and utilizes Diffie-Hellman Key Exchange combined with Digital Signatures for Forward Secrecy, Integrity, and Non-repudiation:
+
+```
+Client                                                  Server
+  |                                                       |
+  |  <----- server_certificate.pem -----------------------|  (1)
+  |                                                       |
+  |  ------ client_certificate.pem ---------------------->|  (2)
+  |                                                       |
+  | verify server cert                      verify client cert  
+  |                                                       |
+  |                              generate DH params & key pair
+  |                             sign (DH param + Server DH PKEY)
+  |                                                       |
+  |  <----- signed (DH param + Server DH PKEY) -----------|  (3)
+  |                                                       |
+  | verify signature, split & extract DH fields           |
+  | generate Client DH key pair                           |
+  | sign Client DH PKEY                                   |
+  |                                                       |
+  |  ------ signed (Client DH PKEY) --------------------->|  (4)
+  |                                                       |
+  |                                verify signature & extract
+  |                                                       |
+  |           [Both parties derive DH Secret Key]         |
+  |                                                       |
+  |  <======== AES-256-CBC Encrypted & CMS Signed =======>|  (Subsequent comms over both channels)
+```
+
+1. Server sends its X.509 certificate to the client, and the client sends its X.509 certificate to the server. Both ends verify certificates against the Root CA certificate.
+2. Server generates Diffie-Hellman parameters, generates its DH key pair, merges the parameters and the public key into one payload, signs the payload using its RSA key matrix via `openssl cms`, and sends it to the client.
+3. The client receives the payload, verifies the CMS signature using the server's cert, extracts the DH parameters and Server DH public key.
+4. The client subsequently establishes its own DH key pair mapped to the received params, signs its public key using its own RSA key, and sends it to the server where it's verified.
+5. Both sides compute the Shared Diffie-Hellman secret independently using `openssl pkeyutl -derive`.
+6. Subsequent messages and file chunks are encrypted using the derived shared secret via `openssl enc -aes-256-cbc`, and the resulting ciphertexts are CMS-signed before being sent, requiring verification and extraction upon reading on the other end.
+
+---
 
 ## Contribution
 

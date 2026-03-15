@@ -20,16 +20,9 @@ void recv_filename(char* buffer, int size) {
     buffer[filename_len] = '\0';      /* Ensure null termination */
 }
 
-void recv_file_enc() {
-    recv_file_content(file_socket, file_in_enc_path, file_buf_in);
-}
-
-void recv_file_tag() {
-
-}
-
-void vrfy_file_tag() {
-
+void recv_signed_file() {
+    recv_file_content(file_socket, file_in_signed_path, file_buf_in);
+    cms_extract_file(file_in_signed_path, root_ca_cert_path, file_in_enc_path);
 }
 
 void file_decrypt(char* filename) {
@@ -56,12 +49,12 @@ void confirm_recv(char* filename) {
 }
 
 
-void* file_recv_loop(void* args) {
+void* file_recv_loop(void*) {
     char filename[128];
     
     while (1) {
         recv_filename(filename, 128);
-        recv_file_enc();
+        recv_signed_file();
         file_decrypt(filename);
         confirm_recv(filename);
 

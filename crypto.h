@@ -1,6 +1,9 @@
 #ifndef CRYPTO_H
 #define CRYPTO_H
 
+// Utility function to disable outputting on terminal
+void disable_terminal_output();
+
 // Verify peer_cert against root_cert
 void verify_certificate(char* root_cert, char* peer_cert);
 

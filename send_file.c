@@ -4,31 +4,43 @@
 #include "tui.h"
 #include "send.h"
 
-void send_filename(char* filename) {
+bool send_filename(char* filename) {
+    // If there is error in opening file, return false;
+    if (access(filename, F_OK) != 0) {
+        sem_wait(&printing);
+        wattron(log_win, COLOR_PAIR(CP_RED));
+        wprintw(log_win, "File `%s` doesn't exist.\n", filename);
+        wattroff(log_win, COLOR_PAIR(CP_RED));
+        sem_post(&printing);
+        wrefresh(log_win);
+        return false; 
+    }
+
     int n;
-    int connection_socket = file_socket;
     uint32_t filename_len; 
 
     // Send filename length
     filename_len = strlen(filename);
-    n = send(connection_socket, &filename_len, sizeof(filename_len), 0);
+    n = send(file_socket, &filename_len, sizeof(filename_len), 0);
     if (n == -1) fatal_error("[FILENAME LENGTH SEND ERROR]");
 
     // Send the filename
-    n = send(connection_socket, filename, filename_len, 0);
+    n = send(file_socket, filename, filename_len, 0);
     if (n == -1) fatal_error("[FILENAME SEND ERROR]");
+
+    return true;
 }
 
 void file_encrypt(char* filename) {
     encrypt_file(filename, file_out_enc_path, session_key_path);
 }
 
-void send_file_enc() {
-    send_file_content(file_socket, file_out_enc_path, buf_out);
+void sign_file(char* cert_path, char* skey_path) {
+    cms_sign_file(file_out_enc_path, cert_path, skey_path, file_out_signed_path);
 }
 
-void send_file_tag() {
-    
+void send_signed_file() {
+    send_file_content(file_socket, file_out_signed_path, buf_out);
 }
 
 void confirm_sent(char* filename) {
@@ -44,9 +56,11 @@ void confirm_sent(char* filename) {
     sem_post(&printing);
 }
 
-void send_file(char* filename) {    
-    send_filename(filename);
+void send_file(char* filename) {
+    if (!send_filename(filename)) return;
     file_encrypt(filename);
-    send_file_enc();
+    if (app_mode == CLIENT) sign_file(client_cert_path, client_skey_path);
+    else if (app_mode == SERVER) sign_file(server_cert_path, server_skey_path);
+    send_signed_file();
     confirm_sent(filename);
 }

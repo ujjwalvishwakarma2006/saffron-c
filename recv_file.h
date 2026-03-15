@@ -2,9 +2,7 @@
 #define FILE_RECV_H
 
 void recv_filename(char* buffer, int size); /* Receive filename in the buffer */
-void recv_file_enc();                       /* Receive encrypted file */
-void recv_file_tag();                       /* Receive HMAC tag of the file */
-void vrfy_file_tag();                       /* Verify file tag */
+void recv_signed_file();                    /* Receive encrypted file */
 void file_decrypt(char* filename);          /* Decrypt the file to actual filename */
 void confirm_recv(char* filename);          /* Display file received confirmation message */
 

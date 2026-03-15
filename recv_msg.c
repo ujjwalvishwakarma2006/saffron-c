@@ -40,7 +40,7 @@ void msg_display() {
     fclose(fp);
 }
 
-void* msg_recv_loop(void* args) {
+void* msg_recv_loop(void*) {
     while (1) {
         recv_signed_enc_msg();
         extract_enc_msg();

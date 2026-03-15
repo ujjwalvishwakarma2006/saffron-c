@@ -30,7 +30,7 @@ int server_start(const char* server_ip, const int server_port, const char* label
     return server_socket;
 }
 
-int server_accept(const int listen_fd, const char* channel_name) {
+int server_accept(const int listen_fd) {
     int connection_socket;
     struct sockaddr_in client_addr;
     socklen_t addr_size;
@@ -38,8 +38,6 @@ int server_accept(const int listen_fd, const char* channel_name) {
     // Accept incoming request
     connection_socket = accept(listen_fd, (struct sockaddr*)& client_addr, &addr_size);
     if (connection_socket == -1) fatal_error("[CONNECTION ERROR]");
-    wprintw(log_win, "Connected to client with file descriptor %d for %s\n", connection_socket, channel_name);
-    wrefresh(log_win);
     
     return connection_socket;
 }

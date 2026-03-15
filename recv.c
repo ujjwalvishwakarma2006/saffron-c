@@ -12,7 +12,7 @@ void recv_file_content(int connection_socket, char* filename, char* buffer) {
     memset(buffer, 0, BUF_SIZE);
 
     // Open the file in write mode
-    fp = fopen(filename, "w");
+    fp = fopen(filename, "wb");
     if (fp == NULL) fatal_error("[ERROR OPENING FILE]");
 
     // Receive content_bytes
