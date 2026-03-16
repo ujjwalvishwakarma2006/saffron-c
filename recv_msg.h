@@ -16,6 +16,6 @@ void msg_decrypt();
 void msg_display();
 
 /* Thread function: receive, verify, decrypt and display messages in a loop */
-void* msg_recv_loop();
+void* msg_recv_loop(void*);
 
 #endif // !MSG_RECV_H
