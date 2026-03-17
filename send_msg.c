@@ -3,12 +3,13 @@
 #include "crypto.h"
 #include "tui.h"
 #include "send.h"
+#include "file_utils.h"
 
 void write_msg_file(char* message) {
     FILE* fp;
 
-    fp = fopen(msg_out_path, "w");
-    if (fp == NULL) fatal_error("[MESSAGE FILE OPENING ERROR]");
+    fp = open_file(msg_out_path, "w");
+    if (fp == NULL) return;
     fprintf(fp, "%s", message);
 
     fclose(fp);

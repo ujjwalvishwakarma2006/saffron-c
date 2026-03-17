@@ -1,9 +1,7 @@
 #ifndef MSG_RECV_H
 #define MSG_RECV_H
 
-void read_file_content(char* buffer, char* filename);
-
-/* Receive encrypted message */
+/* Receive (encrypted + signed) message */
 void recv_signed_enc_msg();
 
 /* Extract the encrypted message if it's signature is verified */

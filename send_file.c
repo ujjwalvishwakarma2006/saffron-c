@@ -3,19 +3,11 @@
 #include "crypto.h"
 #include "tui.h"
 #include "send.h"
+#include "file_utils.h"
 
 bool send_filename(char* filename) {
-    // If there is error in opening file, return false;
-    if (access(filename, F_OK) != 0) {
-        sem_wait(&printing);
-        wattron(log_win, COLOR_PAIR(CP_RED));
-        wprintw(log_win, "File `%s` doesn't exist.\n", filename);
-        wattroff(log_win, COLOR_PAIR(CP_RED));
-        sem_post(&printing);
-        wrefresh(log_win);
-        return false; 
-    }
-
+    if (!can_access(filename)) return false;
+    
     int n;
     uint32_t filename_len; 
 

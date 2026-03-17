@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <locale.h>
 #include <fcntl.h>
+#include <errno.h>
 
 // POSIX / System headers
 #include <unistd.h>

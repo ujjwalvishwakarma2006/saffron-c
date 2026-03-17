@@ -1,5 +1,6 @@
 #include "common.h"
 #include "recv.h"
+#include "file_utils.h"
 
 void recv_file_content(int connection_socket, char* filename, char* buffer) {
     int n;
@@ -12,8 +13,8 @@ void recv_file_content(int connection_socket, char* filename, char* buffer) {
     memset(buffer, 0, BUF_SIZE);
 
     // Open the file in write mode
-    fp = fopen(filename, "wb");
-    if (fp == NULL) fatal_error("[ERROR OPENING FILE]");
+    fp = open_file(filename, "wb");
+    if (fp == NULL) return;
 
     // Receive content_bytes
     n = recv(connection_socket, &content_bytes, sizeof(content_bytes), MSG_WAITALL);

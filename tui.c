@@ -77,7 +77,7 @@ void tui_init() {
     box(chat_box, 0, 0);
 
     // Horizontal divider between log area and input area
-    int divider_row = chat_h - 3;
+    int divider_row = chat_h - 4;
     mvwhline(chat_box, divider_row, 1, ACS_HLINE, cols - 2);
     mvwaddch(chat_box, divider_row, 0, ACS_LTEE);         // ├
     mvwaddch(chat_box, divider_row, cols - 1, ACS_RTEE);   // ┤

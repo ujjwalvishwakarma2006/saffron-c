@@ -1,5 +1,6 @@
 #include "common.h"
 #include "send.h"
+#include "file_utils.h"
 
 void send_file_content(int connection_socket, char* filepath, char* buffer) {
     int n;
@@ -7,8 +8,8 @@ void send_file_content(int connection_socket, char* filepath, char* buffer) {
     FILE* fp;
 
     // Open the file
-    fp = fopen(filepath, "rb");
-    if (fp == NULL) fatal_error("[ERROR OPENING FILE]");
+    fp = open_file(filepath, "rb");
+    if (fp == NULL) return;
 
     // Send content size (in bytes)
     fseek(fp, 0, SEEK_END);

@@ -1,20 +1,55 @@
 #include "common.h"
+#include "tui.h"
 #include "file_utils.h"
 
+/* Check whether a file can be accessed or not*/
+bool can_access(char* filename) {
+    if (access(filename, F_OK) != 0) {
+        int err = errno;
+        sem_wait(&printing);
+        wattron(log_win, COLOR_PAIR(CP_RED));
+        wprintw(log_win, "Error accessing `%s`: %s\n", filename, strerror(err));
+        wattroff(log_win, COLOR_PAIR(CP_RED));
+        sem_post(&printing);
+        wrefresh(log_win);
+        return false;
+    }
+    return true;
+}
+
+/* A wrapper around fopen function to handle all file related errors at one place */
+FILE* open_file(char* filename, char* mode) {
+    if (!can_access(filename)) return NULL;
+
+    FILE* fp = fopen(filename, mode);
+    if (fp == NULL) {
+        int err = errno;
+        sem_wait(&printing);
+        wattron(log_win, COLOR_PAIR(CP_RED));
+        wprintw(log_win, "Error opening `%s`: %s\n", filename, strerror(err));
+        wattroff(log_win, COLOR_PAIR(CP_RED));
+        sem_post(&printing);
+        wrefresh(log_win);
+        return NULL;
+    }
+
+    return fp;
+}
+
 /* Merge(copy) different files into one single file with their size as prefix */
-void merge_files(int num_files, char* file_names[], char* out_file) {
+bool merge_files(int num_files, char* file_names[], char* out_file) {
     FILE* fp_write;
     FILE* fp_read;
     int n;
     uint32_t file_size;
     char buffer[BUF_SIZE];
 
-    fp_write = fopen(out_file, "wb");
-    if (fp_write == NULL) fatal_error("[ERROR OPENING FILE]");
+    fp_write = open_file(out_file, "wb");
+    if (fp_write == NULL) return false;
     
     for (int i = 0; i < num_files; ++i) {
-        fp_read = fopen(file_names[i], "rb");
-        if (fp_read == NULL) fatal_error("[ERROR OPENING FILE]");
+        fp_read = open_file(file_names[i], "rb");
+        if (fp_read == NULL) return false;
 
         // Write the file size into the out_file first
         fseek(fp_read, 0, SEEK_END);
@@ -32,10 +67,11 @@ void merge_files(int num_files, char* file_names[], char* out_file) {
     }
 
     fclose(fp_write);
+    return true;
 }
 
 /* Split a single file into different files based on size */
-void split_file(char* in_file, int num_files, char* out_files[]) {
+bool split_file(char* in_file, int num_files, char* out_files[]) {
     FILE* fp_read;
     FILE* fp_write;
     uint32_t file_size;         /* Number of bytes to be written in the file */
@@ -43,12 +79,12 @@ void split_file(char* in_file, int num_files, char* out_files[]) {
     uint32_t to_write;          /* Number of bytes to write in the file at one time */
     int n;
 
-    fp_read = fopen(in_file, "rb");
-    if (fp_read == NULL) fatal_error("[ERROR OPENING FILE]");
+    fp_read = open_file(in_file, "rb");
+    if (fp_read == NULL) return false;
     
     for (int i = 0; i < num_files; ++i) {
-        fp_write = fopen(out_files[i], "wb");
-        if (fp_write == NULL) fatal_error("[ERROR OPENING FILE]");
+        fp_write = open_file(out_files[i], "wb");
+        if (fp_write == NULL) return false;
 
         // Read the file_size corresponding to the file contained in the section
         // uint32_t ntohl_size;    /* This is necessary for conversion */
@@ -71,4 +107,5 @@ void split_file(char* in_file, int num_files, char* out_files[]) {
     }
     
     fclose(fp_read);
+    return true;
 }

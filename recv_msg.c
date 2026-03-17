@@ -3,6 +3,7 @@
 #include "tui.h"
 #include "recv.h"
 #include "recv_msg.h"
+#include "file_utils.h"
 
 void recv_signed_enc_msg() {
     recv_file_content(msg_socket, msg_in_signed_path, msg_buf_in);
@@ -19,8 +20,8 @@ void msg_decrypt() {
 void msg_display() {
     FILE* fp;
     
-    fp = fopen(msg_in_path, "r");
-    if (fp == NULL) fatal_error("[RECV_MSG FILE OPENING ERROR]");
+    fp = open_file(msg_in_path, "r");
+    if (fp == NULL) return;
     
     sem_wait(&printing);
 
