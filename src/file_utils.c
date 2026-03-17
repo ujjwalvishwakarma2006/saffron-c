@@ -19,7 +19,8 @@ bool can_access(char* filename) {
 
 /* A wrapper around fopen function to handle all file related errors at one place */
 FILE* open_file(char* filename, char* mode) {
-    if (!can_access(filename)) return NULL;
+    // return NULL if caller wants to read, but can't access the file
+    if (mode[0] == 'r' && !can_access(filename)) return NULL;
 
     FILE* fp = fopen(filename, mode);
     if (fp == NULL) {

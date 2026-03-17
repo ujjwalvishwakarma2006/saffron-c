@@ -53,8 +53,7 @@ bool verify_certificate(char* root_cert, char* peer_cert) {
         disable_terminal_output();
         char* args[] = {"openssl", "verify", "-CAfile", root_cert, peer_cert, NULL};
         execvp(args[0], args);
-        
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     
     return crypto_wait_and_check(child_pid, "ERROR VERIFYIN CERT");
@@ -71,7 +70,7 @@ bool generate_dh_params(char* dhp_file) {
             "-out", dhp_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
 
     return crypto_wait_and_check(child_pid, "ERROR GENERATING DH-PARAM");
@@ -91,7 +90,7 @@ bool generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
             "-out", skey_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     if (!crypto_wait_and_check(child_pid, "ERROR GENERATING KEYPAIR")) return false;
     
@@ -105,7 +104,7 @@ bool generate_dh_key_pair(char* dhp_file, char* skey_file, char* pkey_file) {
             "-pubout", "-out", pkey_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     return crypto_wait_and_check(child_pid, "ERROR EXTRACTING PKEY");
 }
@@ -122,7 +121,7 @@ bool derive_dh_skey(char* host_dh_skey, char* peer_dh_pkey, char* dh_skey_file) 
             "-out", dh_skey_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     return crypto_wait_and_check(child_pid, "ERROR DERIVING KEY");
 }
@@ -140,7 +139,7 @@ bool cms_sign_file(char* in_file, char* signer_cert, char* signer_skey, char* ou
             "-out", out_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     return crypto_wait_and_check(child_pid, "ERROR EXTRACTING FILE");
 }
@@ -157,7 +156,7 @@ bool cms_extract_file(char* in_file, char* root_cert, char* out_file) {
             "-out", out_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     return crypto_wait_and_check(child_pid, "ERROR SIGNING FILE");
 }
@@ -173,7 +172,7 @@ bool encrypt_file(char* file_name, char* enc_file_name, char* key_file) {
             "-kfile", key_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     return crypto_wait_and_check(child_pid, "ERROR ENCRYPTING FILE");
 }
@@ -189,7 +188,7 @@ bool decrypt_file(char* enc_file_name, char* file_name, char* key_file) {
             "-kfile", key_file, NULL
         };
         execvp(args[0], args);
-        fatal_error("[`execvp` SYSCALL FAILURE]");
+        exit(1);
     }
     return crypto_wait_and_check(child_pid, "ERROR DECRYPTING FILE");
 }
