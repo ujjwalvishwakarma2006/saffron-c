@@ -4,6 +4,7 @@
 #include "recv.h"
 #include "recv_file.h"
 
+/* Receive filename in the buffer */
 void recv_filename(char* buffer, int size) {
     int n;
     uint32_t filename_len;
@@ -20,15 +21,18 @@ void recv_filename(char* buffer, int size) {
     buffer[filename_len] = '\0';      /* Ensure null termination */
 }
 
+/* Receive encrypted file */
 void recv_signed_file() {
     recv_file_content(file_socket, file_in_signed_path, file_buf_in);
     cms_extract_file(file_in_signed_path, root_ca_cert_path, file_in_enc_path);
 }
 
+/* Decrypt the file to actual filename */
 void file_decrypt(char* filename) {
     decrypt_file(file_in_enc_path, filename, session_key_path);
 }
 
+/* Display file received confirmation message */
 void confirm_recv(char* filename) {
     sem_wait(&printing);
     wattron(log_win, COLOR_PAIR(CP_YELLOW));
@@ -48,7 +52,7 @@ void confirm_recv(char* filename) {
     sem_post(&printing);
 }
 
-
+/* Thread function: receive-verify-decrypt-display in loop*/
 void* file_recv_loop(void*) {
     char filename[128];
     

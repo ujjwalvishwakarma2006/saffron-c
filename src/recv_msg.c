@@ -5,18 +5,22 @@
 #include "recv_msg.h"
 #include "file_utils.h"
 
+/* Receive (encrypted + signed) message */
 void recv_signed_enc_msg() {
     recv_file_content(msg_socket, msg_in_signed_path, msg_buf_in);
 }
 
+/* Extract the encrypted message if it's signature is verified */
 void extract_enc_msg() {
     cms_extract_file(msg_in_signed_path, root_ca_cert_path, msg_in_enc_path);
 }
 
+/* Decrypt the encrypted message */
 void msg_decrypt() {
     decrypt_file(msg_in_enc_path, msg_in_path, session_key_path);
 }
 
+/* Display the decrypted message */
 void msg_display() {
     FILE* fp;
     
@@ -41,6 +45,7 @@ void msg_display() {
     fclose(fp);
 }
 
+/* Thread function: receive, verify, decrypt and display messages in a loop */
 void* msg_recv_loop(void*) {
     while (1) {
         recv_signed_enc_msg();

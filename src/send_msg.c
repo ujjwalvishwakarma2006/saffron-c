@@ -5,6 +5,7 @@
 #include "send.h"
 #include "file_utils.h"
 
+/* Write message to temporary file */
 void write_msg_file(char* message) {
     FILE* fp;
 
@@ -15,18 +16,22 @@ void write_msg_file(char* message) {
     fclose(fp);
 }
 
+/* Encrypt the message file */
 void encrypt_msg_file() {
     encrypt_file(msg_out_path, msg_out_enc_path, session_key_path);
 }
 
+/* Sign encrypted message file */
 void sign_msg_file(char* cert_path, char* skey_path) {
     cms_sign_file(msg_out_enc_path, cert_path, skey_path, msg_out_signed_path);
 }
 
+/* Send (encrypted + signed) message */
 void send_signed_enc_msg() {
     send_file_content(msg_socket, msg_out_signed_path, buf_out);
 }
 
+/* Display confirmation of sent message */
 void display_sent_msg(char* message) {
     sem_wait(&printing);
     wattron(log_win, COLOR_PAIR(CP_GREEN) | A_BOLD);
@@ -37,6 +42,7 @@ void display_sent_msg(char* message) {
     sem_post(&printing);
 }
 
+/* Use all functions above for more abstraction */
 void send_msg(char* message) {
 
     write_msg_file(message);
