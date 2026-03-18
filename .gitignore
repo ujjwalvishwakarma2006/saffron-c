@@ -15,3 +15,5 @@ saffron
 objects/
 .saffron-temp/
 .saffron-certs/
+server/
+client/

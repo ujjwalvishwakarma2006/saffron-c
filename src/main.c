@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
         if (!server_send_certificate()) fatal_error("[KEY EXCHANGE FAILURE]");
         if (!server_recv_certificate()) fatal_error("[KEY EXCHANGE FAILURE]");
         if (!server_verify_certificate()) fatal_error("[KEY EXCHANGE FAILURE]");
-        if (!server_generate_dh_params()) fatal_error("[KEY EXCHANGE FAILURE]");
+        // if (!server_generate_dh_params()) fatal_error("[KEY EXCHANGE FAILURE]");
         if (!server_generate_dh_pkey()) fatal_error("[KEY EXCHANGE FAILURE]");
         if (!server_sign_dh_packet()) fatal_error("[KEY EXCHANGE FAILURE]");
         if (!server_send_signed_dh()) fatal_error("[KEY EXCHANGE FAILURE]");
