@@ -1,22 +1,14 @@
 #ifndef SEND_MSG_H
 #define SEND_MSG_H
 
-/* Write message to temporary file */
-void write_msg_file(char* message);
+/* Writes outgoing message text to the plaintext temporary message file. */
+void write_message_to_temp_file(char* message_text);
 
-/* Encrypt the message file */
-void encrypt_msg_file();
+/* Displays confirmation of a sent message in the log window. */
+void display_sent_message(char* message_text);
 
-/* Sign encrypted message file */
-void sign_msg_file(char* cert_path, char* skey_path);
-
-/* Send (encrypted + signed) message */
-void send_signed_enc_msg();
-
-/* Display confirmation of sent message */
-void display_sent_msg(char* message);
-
-/* Use all functions above for more abstraction */
-void send_msg(char* message);
+/* End-to-end outgoing message pipeline:
+ * write -> encrypt -> sign -> send -> display */
+void send_msg(char* message_text);
 
 #endif // !SEND_MSG_H

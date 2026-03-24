@@ -35,7 +35,7 @@ void setup(int argc, char* argv[]) {
         exit(1);
     }
 
-    display_name = strcmp(argv[1], "--server") == 0 ? "Client" : "Server";
+    peer_display_name = strcmp(argv[1], "--server") == 0 ? "Client" : "Server";
     app_mode = strcmp(argv[1], "--server") == 0 ? SERVER : CLIENT;
 
     for (int i = 2; i < argc; ++i) {

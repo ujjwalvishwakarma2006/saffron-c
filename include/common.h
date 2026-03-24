@@ -20,73 +20,72 @@
 // TUI (ncurses)
 #include <ncurses.h>
 
-#define BUF_SIZE 1024                   /* Consistent buffer size */
+#define BUF_SIZE 1024                   /* Shared fixed-size transfer buffer */
 
 typedef enum {
-    SERVER,                             /* Applications runs in SERVER mode */
-    CLIENT,                             /* Applications runs in CLIENT mode */
+    SERVER,                             /* Application runs in server mode */
+    CLIENT,                             /* Application runs in client mode */
     NONE
 } AppMode;
 
 
 // ----------------------------- Application State -----------------------------
-extern AppMode app_mode;                /* Whether the app is running as SERVER or CLIENT */
-extern sem_t printing;                  /* Semaphore to synchronize terminal output across threads */
-extern char* server_ip;                 /* IP address of the server to connect to or bind on */
-extern char* display_name;              /* Display name of the remote peer shown in chat */
-extern int msg_port, file_port;         /* Ports for message and file transfer channels */
-extern int msg_socket, file_socket;     /* Connected sockets for message and file transfer */
+extern AppMode app_mode;                /* Current process role */
+extern sem_t printing;                  /* Synchronizes ncurses output across threads */
+extern char* server_ip;                 /* Server bind/target IP */
+extern char* peer_display_name;         /* Remote peer name shown in chat */
+extern int msg_port, file_port;         /* Message and file channel ports */
+extern int msg_socket, file_socket;     /* Connected sockets for both channels */
 
 
 // -------------------------------- I/O Buffers --------------------------------
-extern char msg_buf_in[BUF_SIZE];       /* Buffer for incoming message data */
-extern char file_buf_in[BUF_SIZE];      /* Buffer for incoming file data */
-extern char buf_out[BUF_SIZE];          /* Buffer for outgoing message/file data */
+extern char message_input_buffer[BUF_SIZE]; /* Incoming message/file chunks */
+extern char file_input_buffer[BUF_SIZE];    /* Incoming file chunks */
+extern char output_buffer[BUF_SIZE];        /* Outgoing transfer chunks */
 
 
 // ------------------------------- Permanent Paths -------------------------------
-extern char* root_ca_cert_path;         /* Path to root CA's certificate */
-extern char* server_cert_path;          /* Path to server's certificate */
-extern char* client_cert_path;          /* Path to client's certificate */
-extern char* server_skey_path;          /* Path to server's RSA secret key */
-extern char* client_skey_path;          /* Path to client's RSA secret key */
+extern char* root_ca_cert_path;         /* Trusted root CA certificate */
+extern char* server_cert_path;          /* Server certificate */
+extern char* client_cert_path;          /* Client certificate */
+extern char* server_secret_key_path;    /* Server RSA private key */
+extern char* client_secret_key_path;    /* Client RSA private key */
 
 
 // ------------------------------- Temporary Paths -------------------------------
-extern char* dh_param_path;             /* Path to DH-parameters file */
-extern char* server_dh_pkey_path;       /* Server's DH public key path */
-extern char* server_dh_skey_path;       /* Server's DH secret/private key path */
-extern char* client_dh_pkey_path;       /* Client's DH public key path */
-extern char* client_dh_skey_path;       /* Client's DH secret/private key path */
-extern char* session_key_path;          /* AES session key (plaintext) */
+extern char* dh_params_path;                /* Diffie-Hellman parameter file */
+extern char* server_dh_public_key_path;     /* Server DH public key file */
+extern char* server_dh_secret_key_path;     /* Server DH private key file */
+extern char* client_dh_public_key_path;     /* Client DH public key file */
+extern char* client_dh_secret_key_path;     /* Client DH private key file */
+extern char* session_key_path;              /* Derived shared session key */
 
 
 // ---------------------------- Temporary File Paths ----------------------------
-// Intermediate files used during encryption/decryption within a session.
-extern char* msg_out_path;              /* Outgoing message — plaintext */
-extern char* msg_out_enc_path;          /* Outgoing message — encrypted */
-extern char* msg_out_signed_path;       /* Outgoing message — (encrypted + signed) */
+// Intermediate files used in secure send/receive pipelines.
+extern char* msg_out_path;              /* Outgoing message plaintext */
+extern char* msg_out_enc_path;          /* Outgoing encrypted message */
+extern char* msg_out_signed_path;       /* Outgoing encrypted + signed message */
 
-extern char* msg_in_signed_path;        /* Incoming message — (encrypted + signed) */
-extern char* msg_in_enc_path;           /* Incoming message — encrypted */
-extern char* msg_in_path;               /* Incoming message — decrypted */
+extern char* msg_in_signed_path;        /* Incoming encrypted + signed message */
+extern char* msg_in_enc_path;           /* Incoming encrypted message */
+extern char* msg_in_path;               /* Incoming decrypted message */
 
-extern char* file_out_path;             /* Outgoing file — plaintext */
-extern char* file_out_enc_path;         /* Outgoing file — encrypted */
-extern char* file_out_signed_path;      /* Outgoing file — (encrypted + signed) */
+extern char* file_out_path;             /* Outgoing file plaintext */
+extern char* file_out_enc_path;         /* Outgoing encrypted file */
+extern char* file_out_signed_path;      /* Outgoing encrypted + signed file */
 
-extern char* file_in_signed_path;       /* Incoming file — (encrypted + signed) */
-extern char* file_in_enc_path;          /* Incoming file — encrypted */
-extern char* file_in_path;              /* Incoming file — unencrypted */
+extern char* file_in_signed_path;       /* Incoming encrypted + signed file */
+extern char* file_in_enc_path;          /* Incoming encrypted file */
+extern char* file_in_path;              /* Incoming decrypted file */
 
 
 // ------------------------------- ncurses Windows -------------------------------
-extern WINDOW *log_win, *input_win;     /* Log (chat history) and input (typing area) windows */
+extern WINDOW *log_win, *input_win;     /* Chat log and input windows */
 
 
 // ----------------------------------- Utility -----------------------------------
-/* Gracefully shuts down ncurses, closes sockets, prints the error, and exits.
- * It is used instead of raw exit() to avoid leaving the terminal in a broken state. */
+/* Gracefully shuts down ncurses, closes sockets, prints the error, and exits. */
 void fatal_error(char* error);
 
 #endif // !COMMON_H

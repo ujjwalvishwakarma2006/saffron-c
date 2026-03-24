@@ -2,44 +2,38 @@
 #include "recv.h"
 #include "file_utils.h"
 
+/* Receives one length-prefixed payload and writes it to filename. */
 void recv_file_content(int connection_socket, char* filename, char* buffer) {
-    int n;
-    uint32_t content_bytes;     /* Size of the content to be received */
-    uint32_t received_bytes;    /* Number of Received bytes */
-    uint32_t to_receive;        /* Number of bytes to receive in recv() one call */
-    FILE* fp;
+    int bytes_received;
+    uint32_t content_bytes;
+    uint32_t received_bytes;
+    uint32_t bytes_to_receive;
+    FILE* file_pointer;
 
-    // Clear buffer 
     memset(buffer, 0, BUF_SIZE);
 
-    // Open the file in write mode
-    fp = open_file(filename, "wb");
-    if (fp == NULL) return;
+    file_pointer = open_file(filename, "wb");
+    if (file_pointer == NULL) return;
 
-    // Receive content_bytes
-    n = recv(connection_socket, &content_bytes, sizeof(content_bytes), MSG_WAITALL);
-    if (n <= 0) fatal_error("[ERROR CONTENT LENGTH RECV]");
-    
-    // Receive content_bytes number of bytes
+    bytes_received = recv(connection_socket, &content_bytes, sizeof(content_bytes), MSG_WAITALL);
+    if (bytes_received <= 0) fatal_error("[ERROR CONTENT LENGTH RECV]");
+
     received_bytes = 0;
-
     while (received_bytes < content_bytes) {
+        /* Each recv call reads only what remains, capped at BUF_SIZE. */
+        bytes_to_receive = (content_bytes - received_bytes > BUF_SIZE)
+            ? BUF_SIZE
+            : (content_bytes - received_bytes);
 
-        // Receive content in the buffer
-        to_receive = (content_bytes-received_bytes > BUF_SIZE) ?
-                    BUF_SIZE : (content_bytes-received_bytes);
-                    
-        n = recv(connection_socket, buffer, to_receive, MSG_WAITALL);
-        if (n <= 0) {
+        bytes_received = recv(connection_socket, buffer, bytes_to_receive, MSG_WAITALL);
+        if (bytes_received <= 0) {
             printf("[WARNING] Connection closed while receiving file\n");
             break;
         }
 
-        // Write content from the buffer to the file
-        fwrite(buffer, n, 1, fp);
-        received_bytes += n;
+        fwrite(buffer, bytes_received, 1, file_pointer);
+        received_bytes += bytes_received;
     }
 
-    // Close the file
-    fclose(fp);
+    fclose(file_pointer);
 }

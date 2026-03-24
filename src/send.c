@@ -2,27 +2,25 @@
 #include "send.h"
 #include "file_utils.h"
 
+/* Sends one file by first transmitting its byte size and then raw file bytes. */
 void send_file_content(int connection_socket, char* filepath, char* buffer) {
-    int n;
+    int bytes_sent;
     uint32_t content_bytes;
-    FILE* fp;
+    FILE* file_pointer;
 
-    // Open the file
-    fp = open_file(filepath, "rb");
-    if (fp == NULL) return;
+    file_pointer = open_file(filepath, "rb");
+    if (file_pointer == NULL) return;
 
-    // Send content size (in bytes)
-    fseek(fp, 0, SEEK_END);
-    content_bytes = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    n = send(connection_socket, &content_bytes, sizeof(content_bytes), 0);
-    if (n == -1) fatal_error("[ERROR SEND CONTENT LENGTH]");
+    fseek(file_pointer, 0, SEEK_END);
+    content_bytes = ftell(file_pointer);
+    fseek(file_pointer, 0, SEEK_SET);
 
-    // Send file content
-    while ((n = fread(buffer, 1, BUF_SIZE, fp)) > 0) {
-        send(connection_socket, buffer, n, 0);
+    bytes_sent = send(connection_socket, &content_bytes, sizeof(content_bytes), 0);
+    if (bytes_sent == -1) fatal_error("[ERROR SEND CONTENT LENGTH]");
+
+    while ((bytes_sent = fread(buffer, 1, BUF_SIZE, file_pointer)) > 0) {
+        send(connection_socket, buffer, bytes_sent, 0);
     }
 
-    // Close the file
-    fclose(fp);
+    fclose(file_pointer);
 }

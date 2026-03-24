@@ -4,64 +4,56 @@
 #include "recv.h"
 #include "recv_file.h"
 
-/* Receive filename in the buffer */
-void recv_filename(char* buffer, int size) {
-    int n;
-    uint32_t filename_len;
+/* Receive filename metadata sent before each file payload. */
+void recv_filename(char* output_buffer, int size) {
+    int bytes_received;
+    uint32_t file_name_length;
 
-    // Clear buffer before receiving any object
-    memset(buffer, 0, size);
+    memset(output_buffer, 0, size);
 
-    // Receive length of the filename first
-    n = recv(file_socket, &filename_len, sizeof(filename_len), MSG_WAITALL);
-    if (n <= 0) fatal_error("[FILENAME LENGTH RECV ERROR]");
+    bytes_received = recv(file_socket, &file_name_length, sizeof(file_name_length), MSG_WAITALL);
+    if (bytes_received <= 0) fatal_error("[FILENAME LENGTH RECV ERROR]");
 
-    n = recv(file_socket, buffer, filename_len, MSG_WAITALL);
-    if (n <= 0) fatal_error("[FILENAME RECV ERROR]");
-    buffer[filename_len] = '\0';      /* Ensure null termination */
+    bytes_received = recv(file_socket, output_buffer, file_name_length, MSG_WAITALL);
+    if (bytes_received <= 0) fatal_error("[FILENAME RECV ERROR]");
+
+    output_buffer[file_name_length] = '\0';
 }
 
-/* Receive encrypted file */
-void recv_signed_file() {
-    recv_file_content(file_socket, file_in_signed_path, file_buf_in);
-    cms_extract_file(file_in_signed_path, root_ca_cert_path, file_in_enc_path);
-}
-
-/* Decrypt the file to actual filename */
-void file_decrypt(char* filename) {
-    decrypt_file(file_in_enc_path, filename, session_key_path);
-}
-
-/* Display file received confirmation message */
-void confirm_recv(char* filename) {
+/* Display incoming-file confirmation with sender and filename. */
+void display_file_received_confirmation(char* file_path) {
     sem_wait(&printing);
     wattron(log_win, COLOR_PAIR(CP_YELLOW));
     wprintw(log_win, "\u2193 ");
     wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+
     wattron(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
-    wprintw(log_win, "%s", display_name);
+    wprintw(log_win, "%s", peer_display_name);
     wattroff(log_win, COLOR_PAIR(CP_MAGENTA) | A_BOLD);
+
     wattron(log_win, COLOR_PAIR(CP_YELLOW));
     wprintw(log_win, " sent ");
     wattroff(log_win, COLOR_PAIR(CP_YELLOW));
+
     wattron(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
-    wprintw(log_win, "`%s`", filename);
+    wprintw(log_win, "`%s`", file_path);
     wattroff(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+
     wprintw(log_win, "\n");
     wrefresh(log_win);
     sem_post(&printing);
 }
 
-/* Thread function: receive-verify-decrypt-display in loop*/
+/* Receive, verify, decrypt, and confirm incoming files on a dedicated receiver thread. */
 void* file_recv_loop(void*) {
-    char filename[128];
-    
-    while (1) {
-        recv_filename(filename, 128);
-        recv_signed_file();
-        file_decrypt(filename);
-        confirm_recv(filename);
+    char received_file_path[128];
 
+    while (1) {
+        recv_filename(received_file_path, 128);
+        recv_file_content(file_socket, file_in_signed_path, file_input_buffer);
+        cms_extract_file(file_in_signed_path, root_ca_cert_path, file_in_enc_path);
+        decrypt_file(file_in_enc_path, received_file_path, session_key_path);
+        display_file_received_confirmation(received_file_path);
         usleep(100000);
     }
 

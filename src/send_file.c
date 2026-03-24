@@ -5,60 +5,49 @@
 #include "send.h"
 #include "file_utils.h"
 
-/* Send filename */
-bool send_filename(char* filename) {
-    if (!can_access(filename)) return false;
-    
-    int n;
-    uint32_t filename_len; 
+/* Send filename metadata before sending encrypted file payload. */
+bool send_filename(char* file_path) {
+    if (!can_access(file_path)) return false;
 
-    // Send filename length
-    filename_len = strlen(filename);
-    n = send(file_socket, &filename_len, sizeof(filename_len), 0);
-    if (n == -1) fatal_error("[FILENAME LENGTH SEND ERROR]");
+    int bytes_sent;
+    uint32_t file_name_length;
 
-    // Send the filename
-    n = send(file_socket, filename, filename_len, 0);
-    if (n == -1) fatal_error("[FILENAME SEND ERROR]");
+    file_name_length = strlen(file_path);
+    bytes_sent = send(file_socket, &file_name_length, sizeof(file_name_length), 0);
+    if (bytes_sent == -1) fatal_error("[FILENAME LENGTH SEND ERROR]");
+
+    bytes_sent = send(file_socket, file_path, file_name_length, 0);
+    if (bytes_sent == -1) fatal_error("[FILENAME SEND ERROR]");
 
     return true;
 }
 
-/* Encrypt outgoing file */
-void file_encrypt(char* filename) {
-    encrypt_file(filename, file_out_enc_path, session_key_path);
-}
-
-/* Sign Encrypted file */
-void sign_file(char* cert_path, char* skey_path) {
-    cms_sign_file(file_out_enc_path, cert_path, skey_path, file_out_signed_path);
-}
-
-/* Send (signed + encrypted) file integrity */
-void send_signed_file() {
-    send_file_content(file_socket, file_out_signed_path, buf_out);
-}
-
-/* Display file sent confirmation message */
-void confirm_sent(char* filename) {
+/* Display local confirmation that file transfer was initiated successfully. */
+void display_file_sent_confirmation(char* file_path) {
     sem_wait(&printing);
     wattron(log_win, COLOR_PAIR(CP_YELLOW));
     wprintw(log_win, "\u2191 File sent ");
     wattroff(log_win, COLOR_PAIR(CP_YELLOW));
     wattron(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
-    wprintw(log_win, "`%s`", filename);
+    wprintw(log_win, "`%s`", file_path);
     wattroff(log_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
     wprintw(log_win, "\n");
     wrefresh(log_win);
     sem_post(&printing);
 }
 
-/* Uses all functions above for more abstraction*/
-void send_file(char* filename) {
-    if (!send_filename(filename)) return;
-    file_encrypt(filename);
-    if (app_mode == CLIENT) sign_file(client_cert_path, client_skey_path);
-    else if (app_mode == SERVER) sign_file(server_cert_path, server_skey_path);
-    send_signed_file();
-    confirm_sent(filename);
+/* Complete outgoing file pipeline with role-specific signing credentials. */
+void send_file(char* file_path) {
+    if (!send_filename(file_path)) return;
+
+    encrypt_file(file_path, file_out_enc_path, session_key_path);
+
+    if (app_mode == CLIENT) {
+        cms_sign_file(file_out_enc_path, client_cert_path, client_secret_key_path, file_out_signed_path);
+    } else if (app_mode == SERVER) {
+        cms_sign_file(file_out_enc_path, server_cert_path, server_secret_key_path, file_out_signed_path);
+    }
+
+    send_file_content(file_socket, file_out_signed_path, output_buffer);
+    display_file_sent_confirmation(file_path);
 }

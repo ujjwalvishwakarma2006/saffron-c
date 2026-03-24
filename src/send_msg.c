@@ -5,54 +5,38 @@
 #include "send.h"
 #include "file_utils.h"
 
-/* Write message to temporary file */
-void write_msg_file(char* message) {
-    FILE* fp;
+/* Write outgoing message text into the plaintext temp file consumed by the crypto pipeline. */
+void write_message_to_temp_file(char* message_text) {
+    FILE* message_file = open_file(msg_out_path, "w");
+    if (message_file == NULL) return;
 
-    fp = open_file(msg_out_path, "w");
-    if (fp == NULL) return;
-    fprintf(fp, "%s", message);
-
-    fclose(fp);
+    fprintf(message_file, "%s", message_text);
+    fclose(message_file);
 }
 
-/* Encrypt the message file */
-void encrypt_msg_file() {
-    encrypt_file(msg_out_path, msg_out_enc_path, session_key_path);
-}
-
-/* Sign encrypted message file */
-void sign_msg_file(char* cert_path, char* skey_path) {
-    cms_sign_file(msg_out_enc_path, cert_path, skey_path, msg_out_signed_path);
-}
-
-/* Send (encrypted + signed) message */
-void send_signed_enc_msg() {
-    send_file_content(msg_socket, msg_out_signed_path, buf_out);
-}
-
-/* Display confirmation of sent message */
-void display_sent_msg(char* message) {
+/* Log sent message in local chat view. */
+void display_sent_message(char* message_text) {
     sem_wait(&printing);
     wattron(log_win, COLOR_PAIR(CP_GREEN) | A_BOLD);
     wprintw(log_win, "You:");
     wattroff(log_win, COLOR_PAIR(CP_GREEN) | A_BOLD);
-    wprintw(log_win, " %s\n", message);
+    wprintw(log_win, " %s\n", message_text);
     wrefresh(log_win);
     sem_post(&printing);
 }
 
-/* Use all functions above for more abstraction */
-void send_msg(char* message) {
+/* Complete outgoing message pipeline with role-specific signing credentials. */
+void send_msg(char* message_text) {
+    write_message_to_temp_file(message_text);
 
-    write_msg_file(message);
-    encrypt_msg_file();
+    encrypt_file(msg_out_path, msg_out_enc_path, session_key_path);
+
     if (app_mode == CLIENT) {
-        sign_msg_file(client_cert_path, client_skey_path);
+        cms_sign_file(msg_out_enc_path, client_cert_path, client_secret_key_path, msg_out_signed_path);
     } else if (app_mode == SERVER) {
-        sign_msg_file(server_cert_path, server_skey_path);
+        cms_sign_file(msg_out_enc_path, server_cert_path, server_secret_key_path, msg_out_signed_path);
     }
-    send_signed_enc_msg();
-    display_sent_msg(message);
-    
+
+    send_file_content(msg_socket, msg_out_signed_path, output_buffer);
+    display_sent_message(message_text);
 }

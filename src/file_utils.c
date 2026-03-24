@@ -98,9 +98,9 @@ bool split_file(char* in_file, int num_files, char* out_files[]) {
         while (written_bytes < file_size) {
             to_write = (file_size - written_bytes) > BUF_SIZE ?
                         BUF_SIZE : (file_size - written_bytes);
-            n = fread(file_buf_in, 1, to_write, fp_read);
+            n = fread(file_input_buffer, 1, to_write, fp_read);
             if (n <= 0) fatal_error("[ERROR READING FILE CONTENT]");
-            fwrite(file_buf_in, 1, n, fp_write);
+            fwrite(file_input_buffer, 1, n, fp_write);
             written_bytes += n;
         }
 

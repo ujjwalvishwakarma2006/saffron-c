@@ -20,7 +20,6 @@ void tui_init() {
     noecho();
     curs_set(1);
 
-    // Initialize colors
     if (has_colors()) {
         start_color();
         use_default_colors();
@@ -35,80 +34,71 @@ void tui_init() {
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
 
-    int header_h = HEADER_HEIGHT;
-    int hint_h   = 1;
-    int chat_h   = rows - header_h - hint_h;
+    int header_height = HEADER_HEIGHT;
+    int hint_height = 1;
+    int chat_height = rows - header_height - hint_height;
 
-    // ======================== HEADER (no border) ========================
-    WINDOW *header_win = newwin(header_h, cols, 0, 0);
+    WINDOW *header_window = newwin(header_height, cols, 0, 0);
 
-    // Logo — cyan bold
-    wattron(header_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+    wattron(header_window, COLOR_PAIR(CP_CYAN) | A_BOLD);
     for (int i = 0; i < LOGO_LINES; i++) {
-        mvwprintw(header_win, i + 1, 2, "%s", logo[i]);
+        mvwprintw(header_window, i + 1, 2, "%s", logo[i]);
     }
-    wattroff(header_win, COLOR_PAIR(CP_CYAN) | A_BOLD);
+    wattroff(header_window, COLOR_PAIR(CP_CYAN) | A_BOLD);
 
-    // Tagline — dim, left side
-    wattron(header_win, A_DIM);
-    mvwprintw(header_win, 8, 2, "Encrypted P2P Chat");
-    wattroff(header_win, A_DIM);
+    wattron(header_window, A_DIM);
+    mvwprintw(header_window, 8, 2, "Encrypted P2P Chat");
+    wattroff(header_window, A_DIM);
 
-    // Connection info — green, right-aligned
-    const char *mode_str = (app_mode == SERVER) ? "SERVER" : "CLIENT";
+    const char *mode_name = (app_mode == SERVER) ? "SERVER" : "CLIENT";
 
-    char info_line[256];
-    snprintf(info_line, sizeof(info_line),
-             "Connected to: %s  |  Mode: %s", server_ip, mode_str);
-    wattron(header_win, COLOR_PAIR(CP_GREEN));
-    mvwprintw(header_win, 8, cols - (int)strlen(info_line) - 2, "%s", info_line);
-    wattroff(header_win, COLOR_PAIR(CP_GREEN));
+    char connection_info_buffer[256];
+    snprintf(connection_info_buffer, sizeof(connection_info_buffer),
+             "Connected to: %s  |  Mode: %s", server_ip, mode_name);
+    wattron(header_window, COLOR_PAIR(CP_GREEN));
+    mvwprintw(header_window, 8, cols - (int)strlen(connection_info_buffer) - 2, "%s", connection_info_buffer);
+    wattroff(header_window, COLOR_PAIR(CP_GREEN));
 
-    char peer_line[128];
-    snprintf(peer_line, sizeof(peer_line), "Peer: %s", display_name);
-    wattron(header_win, COLOR_PAIR(CP_GREEN));
-    mvwprintw(header_win, 9, cols - (int)strlen(peer_line) - 2, "%s", peer_line);
-    wattroff(header_win, COLOR_PAIR(CP_GREEN));
+    char peer_info_buffer[128];
+    snprintf(peer_info_buffer, sizeof(peer_info_buffer), "Peer: %s", peer_display_name);
+    wattron(header_window, COLOR_PAIR(CP_GREEN));
+    mvwprintw(header_window, 9, cols - (int)strlen(peer_info_buffer) - 2, "%s", peer_info_buffer);
+    wattroff(header_window, COLOR_PAIR(CP_GREEN));
 
-    wrefresh(header_win);
+    wrefresh(header_window);
 
-    // ============= CHAT BOX (log + input, single bordered box) =============
-    WINDOW *chat_box = newwin(chat_h, cols, header_h, 0);
-    box(chat_box, 0, 0);
+    WINDOW *chat_box_window = newwin(chat_height, cols, header_height, 0);
+    box(chat_box_window, 0, 0);
 
-    // Horizontal divider between log area and input area
-    int divider_row = chat_h - 4;
-    mvwhline(chat_box, divider_row, 1, ACS_HLINE, cols - 2);
-    mvwaddch(chat_box, divider_row, 0, ACS_LTEE);         // ├
-    mvwaddch(chat_box, divider_row, cols - 1, ACS_RTEE);   // ┤
+    /* The divider reserves one input row and one spacer row at the bottom. */
+    int divider_row = chat_height - 4;
+    mvwhline(chat_box_window, divider_row, 1, ACS_HLINE, cols - 2);
+    mvwaddch(chat_box_window, divider_row, 0, ACS_LTEE);
+    mvwaddch(chat_box_window, divider_row, cols - 1, ACS_RTEE);
 
-    // >> prompt — cyan bold, drawn on the box
-    wattron(chat_box, COLOR_PAIR(CP_CYAN) | A_BOLD);
-    mvwprintw(chat_box, divider_row + 1, 2, ">>");
-    wattroff(chat_box, COLOR_PAIR(CP_CYAN) | A_BOLD);
+    wattron(chat_box_window, COLOR_PAIR(CP_CYAN) | A_BOLD);
+    mvwprintw(chat_box_window, divider_row + 1, 2, ">>");
+    wattroff(chat_box_window, COLOR_PAIR(CP_CYAN) | A_BOLD);
 
-    wrefresh(chat_box);
+    wrefresh(chat_box_window);
 
-    // Log window — inner area above the divider
     int log_rows = divider_row - 1;
-    log_win = derwin(chat_box, log_rows, cols - 4, 1, 2);
+    log_win = derwin(chat_box_window, log_rows, cols - 4, 1, 2);
     scrollok(log_win, TRUE);
     keypad(log_win, TRUE);
     wrefresh(log_win);
 
-    // Input window — inner area after >>, below divider
-    input_win = derwin(chat_box, 1, cols - 7, divider_row + 1, 5);
+    input_win = derwin(chat_box_window, 1, cols - 7, divider_row + 1, 5);
     scrollok(input_win, TRUE);
     keypad(input_win, TRUE);
     idlok(input_win, TRUE);
     wrefresh(input_win);
 
-    // ======================== HINT BAR (no border) ========================
-    WINDOW *hint_win = newwin(hint_h, cols, rows - 1, 0);
+    WINDOW *hint_window = newwin(hint_height, cols, rows - 1, 0);
 
     const char *hint_text = "/f <filepath> send file  |  /q quit";
-    wattron(hint_win, A_DIM);
-    mvwprintw(hint_win, 0, cols - (int)strlen(hint_text) - 2, "%s", hint_text);
-    wattroff(hint_win, A_DIM);
-    wrefresh(hint_win);
+    wattron(hint_window, A_DIM);
+    mvwprintw(hint_window, 0, cols - (int)strlen(hint_text) - 2, "%s", hint_text);
+    wattroff(hint_window, A_DIM);
+    wrefresh(hint_window);
 }

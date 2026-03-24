@@ -1,22 +1,14 @@
 #ifndef SEND_FILE_H
 #define SEND_FILE_H
 
-/* Send filename */
-bool send_filename(char* filename);
+/* Sends filename metadata ahead of encrypted file content. */
+bool send_filename(char* file_path);
 
-/* Encrypt outgoing file */
-void file_encrypt(char* filename);
+/* Displays file-sent confirmation in the chat log. */
+void display_file_sent_confirmation(char* file_path);
 
-/* Sign Encrypted file */
-void sign_file(char* cert_path, char* skey_path);
-
-/* Send (signed + encrypted) file integrity */
-void send_signed_file();
-
-/* Display file sent confirmation message */
-void confirm_sent(char* filename);
-
-/* Uses all functions above for more abstraction*/
-void send_file(char* filename);
+/* End-to-end outgoing file pipeline:
+ * send filename -> encrypt -> sign -> send payload -> display */
+void send_file(char* file_path);
 
 #endif // !SEND_FILE_H
